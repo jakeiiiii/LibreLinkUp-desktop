@@ -1,4 +1,4 @@
-# LibreLinkUp Desktop v1.0.1
+# LibreLinkUp Desktop v1.0.3
 
 Windows desktop app for monitoring CGM glucose readings from a FreeStyle Libre sensor via Abbott's unofficial LibreLinkUp API.
 
@@ -16,7 +16,7 @@ Python 3.13 · PySide6 (Qt) · pyqtgraph · requests · cryptography (Fernet) ·
 - `utils/config.py` — JSON config with Fernet-encrypted credentials
 - `resources/style.qss` — Qt stylesheet (red/white theme)
 - `config.json` — User-editable defaults (lives next to exe or main.py)
-- `VERSION` — Version string (1.0.1)
+- `VERSION` — Version string (1.0.3)
 
 ## API
 Base: `https://api-{region}.libreview.io` (regions: us, ca, eu, de, fr, au, jp)

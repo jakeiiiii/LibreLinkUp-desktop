@@ -1,14 +1,16 @@
+import ctypes
+import ctypes.wintypes
 import logging
 from datetime import datetime, timedelta
 
 import winsound
 
 from PySide6.QtCore import Qt, QTimer, Signal
-from PySide6.QtGui import QPixmap, QPainter, QFont, QColor, QIcon
+from PySide6.QtGui import QPixmap, QPainter, QFont, QColor, QIcon, QImage
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
+    QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QComboBox, QMessageBox, QDialog, QDoubleSpinBox,
-    QDialogButtonBox, QFormLayout, QMenu,
+    QDialogButtonBox, QFormLayout, QMenu, QSystemTrayIcon,
 )
 
 from api.client import LibreLinkUpClient, LibreLinkUpError
@@ -19,7 +21,78 @@ from ui.logbook_dialog import LogbookDialog
 
 logger = logging.getLogger(__name__)
 
-# Default stale threshold (overridden by config "stale_minutes")
+
+# ── Win32 helpers for dynamic taskbar icon ──
+
+class _BITMAPINFOHEADER(ctypes.Structure):
+    _fields_ = [
+        ("biSize", ctypes.wintypes.DWORD),
+        ("biWidth", ctypes.wintypes.LONG),
+        ("biHeight", ctypes.wintypes.LONG),
+        ("biPlanes", ctypes.wintypes.WORD),
+        ("biBitCount", ctypes.wintypes.WORD),
+        ("biCompression", ctypes.wintypes.DWORD),
+        ("biSizeImage", ctypes.wintypes.DWORD),
+        ("biXPelsPerMeter", ctypes.wintypes.LONG),
+        ("biYPelsPerMeter", ctypes.wintypes.LONG),
+        ("biClrUsed", ctypes.wintypes.DWORD),
+        ("biClrImportant", ctypes.wintypes.DWORD),
+    ]
+
+
+class _BITMAPINFO(ctypes.Structure):
+    _fields_ = [("bmiHeader", _BITMAPINFOHEADER)]
+
+
+class _ICONINFO(ctypes.Structure):
+    _fields_ = [
+        ("fIcon", ctypes.wintypes.BOOL),
+        ("xHotspot", ctypes.wintypes.DWORD),
+        ("yHotspot", ctypes.wintypes.DWORD),
+        ("hbmMask", ctypes.c_void_p),
+        ("hbmColor", ctypes.c_void_p),
+    ]
+
+
+_WM_SETICON = 0x0080
+_ICON_BIG = 1
+_ICON_SMALL = 0
+
+
+def _hicon_from_pixmap(pixmap: QPixmap):
+    """Create a native Windows HICON from a QPixmap."""
+    image = pixmap.toImage().convertToFormat(QImage.Format.Format_ARGB32)
+    width, height = image.width(), image.height()
+
+    # Create a color DIB section
+    hdc = ctypes.windll.user32.GetDC(0)
+    bmi = _BITMAPINFO()
+    bmi.bmiHeader.biSize = ctypes.sizeof(_BITMAPINFOHEADER)
+    bmi.bmiHeader.biWidth = width
+    bmi.bmiHeader.biHeight = -height  # top-down
+    bmi.bmiHeader.biPlanes = 1
+    bmi.bmiHeader.biBitCount = 32
+    bits_ptr = ctypes.c_void_p()
+    hbm_color = ctypes.windll.gdi32.CreateDIBSection(
+        hdc, ctypes.byref(bmi), 0, ctypes.byref(bits_ptr), None, 0,
+    )
+    # Copy pixel data
+    data = bytes(image.constBits())
+    ctypes.memmove(bits_ptr, data, len(data))
+
+    # Monochrome mask (all zeros → fully opaque via alpha channel)
+    hbm_mask = ctypes.windll.gdi32.CreateBitmap(width, height, 1, 1, None)
+
+    ii = _ICONINFO()
+    ii.fIcon = True
+    ii.hbmMask = hbm_mask
+    ii.hbmColor = hbm_color
+    hicon = ctypes.windll.user32.CreateIconIndirect(ctypes.byref(ii))
+
+    ctypes.windll.gdi32.DeleteObject(hbm_color)
+    ctypes.windll.gdi32.DeleteObject(hbm_mask)
+    ctypes.windll.user32.ReleaseDC(0, hdc)
+    return hicon
 
 
 class MainWindow(QWidget):
@@ -36,6 +109,10 @@ class MainWindow(QWidget):
         self._blink_visible = True
         self._is_stale = False
         self._compact = False
+        self._last_icon: QIcon | None = None
+        self._last_hicon = None
+        self._tray_icon = QSystemTrayIcon(self)
+        self._tray_icon.activated.connect(self._on_tray_activated)
 
         self.setWindowFlags(
             Qt.Window | Qt.WindowCloseButtonHint
@@ -439,15 +516,43 @@ class MainWindow(QWidget):
         painter.end()
 
         icon = QIcon(pixmap)
+        self._last_icon = icon
         self.setWindowIcon(icon)
-        # Also update the title so the taskbar tooltip shows the value
+        QApplication.instance().setWindowIcon(icon)
+
+        # Force-set via Win32 API so pinned taskbar icons update
+        self._set_native_icon(pixmap)
+
+        # Update system tray icon
         if reading:
             unit = self.config.get("unit", "mmol")
             val = reading.value(unit)
             unit_str = "mmol/L" if unit == "mmol" else "mg/dL"
+            self._tray_icon.setIcon(icon)
+            self._tray_icon.setToolTip(f"LibreLinkUp — {val} {unit_str}")
+            if not self._tray_icon.isVisible():
+                self._tray_icon.show()
             self.setWindowTitle(app_title(self.config, f"— {val} {unit_str}"))
         else:
+            self._tray_icon.setIcon(icon)
+            self._tray_icon.setToolTip("LibreLinkUp — No Recent Data")
+            if not self._tray_icon.isVisible():
+                self._tray_icon.show()
             self.setWindowTitle(app_title(self.config))
+
+    def _set_native_icon(self, pixmap: QPixmap):
+        """Force-set the taskbar icon via Win32 SendMessage(WM_SETICON)."""
+        try:
+            hwnd = int(self.winId())
+            hicon = _hicon_from_pixmap(pixmap)
+            if hicon:
+                if self._last_hicon:
+                    ctypes.windll.user32.DestroyIcon(self._last_hicon)
+                self._last_hicon = hicon
+                ctypes.windll.user32.SendMessageW(hwnd, _WM_SETICON, _ICON_BIG, hicon)
+                ctypes.windll.user32.SendMessageW(hwnd, _WM_SETICON, _ICON_SMALL, hicon)
+        except Exception:
+            pass  # fall back to Qt icon silently
 
     def _update_unit_button(self):
         unit = self.config.get("unit", "mmol")
@@ -515,9 +620,20 @@ class MainWindow(QWidget):
             self.setWindowFlags(base_flags | Qt.WindowStaysOnTopHint)
         else:
             self.setWindowFlags(base_flags)
-        # setWindowFlags hides the window, so re-show if it was visible
+        # setWindowFlags destroys the native window — re-apply icon and show
+        if self._last_icon:
+            self.setWindowIcon(self._last_icon)
+            QApplication.instance().setWindowIcon(self._last_icon)
         if was_visible:
             self.show()
+        # Re-apply native icon after new HWND is created
+        if self._last_hicon:
+            try:
+                hwnd = int(self.winId())
+                ctypes.windll.user32.SendMessageW(hwnd, _WM_SETICON, _ICON_BIG, self._last_hicon)
+                ctypes.windll.user32.SendMessageW(hwnd, _WM_SETICON, _ICON_SMALL, self._last_hicon)
+            except Exception:
+                pass
 
     def _do_logout(self):
         # Clear cached credentials
@@ -596,8 +712,16 @@ class MainWindow(QWidget):
         dialog = LogbookDialog(entries, self.config.get("unit", "mmol"), self)
         dialog.exec()
 
+    def _on_tray_activated(self, reason):
+        """Clicking the tray icon brings the window to the front."""
+        if reason == QSystemTrayIcon.ActivationReason.Trigger:
+            self.showNormal()
+            self.activateWindow()
+            self.raise_()
+
     def closeEvent(self, event):
         self._save_position()
+        self._tray_icon.hide()
         self.stop_timer()
         super().closeEvent(event)
 

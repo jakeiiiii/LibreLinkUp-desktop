@@ -6,6 +6,11 @@ from pathlib import Path
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QFile
 
+# ── Single instance check (Windows named mutex) ──
+_mutex = ctypes.windll.kernel32.CreateMutexW(None, True, "LibreLinkUp.Desktop.SingleInstance")
+if ctypes.windll.kernel32.GetLastError() == 183:  # ERROR_ALREADY_EXISTS
+    sys.exit(0)
+
 # Tell Windows this is its own app so it gets its own taskbar icon
 # (without this, python.exe's icon is used and setWindowIcon is ignored)
 try:

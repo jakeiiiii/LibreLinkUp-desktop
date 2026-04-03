@@ -1,4 +1,4 @@
-__version__ = "1.0.0"
+__version__ = "1.0.3"
 
 
 def app_title(config: dict, suffix: str = "") -> str:
