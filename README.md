@@ -19,21 +19,25 @@ A Windows desktop app that replicates Abbott's [LibreLinkUp](https://www.libreli
 
 ## Quick Start
 
-### Option 1: Run from source
+### Option 1: Download pre-built
+
+Download `LibreLinkUp.zip` from the [`bin`](bin/) folder, extract it anywhere, and run `LibreLinkUp.exe`. No Python installation required.
+
+### Option 2: Run from source
 
 ```bash
 pip install -r requirements.txt
 python main.py
 ```
 
-### Option 2: Build a standalone .exe
+### Option 3: Build a standalone .exe
 
 ```bash
 pip install -r requirements.txt
-pyinstaller --noconfirm --onedir --windowed --name "LibreLinkUp" --add-data "resources;resources" --add-data "config.json;." main.py
+build.bat
 ```
 
-The output in `dist/LibreLinkUp/` is self-contained -- copy the folder anywhere and run `LibreLinkUp.exe`. No Python installation required.
+This builds the app and packages it into `bin/LibreLinkUp.zip`.
 
 ## Configuration
 
