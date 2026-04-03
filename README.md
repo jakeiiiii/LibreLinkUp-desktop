@@ -6,20 +6,23 @@ A Windows desktop app that replicates Abbott's [LibreLinkUp](https://www.libreli
 
 ## Features
 
-- **Real-time glucose monitoring** with auto-refresh
-- **Auto-login** -- skips the login screen when credentials are cached
-- **12-hour glucose chart** with target range band and alarm lines
-- **Dynamic taskbar icon** showing current glucose number (color-coded green/orange/red)
-- **Gear menu (⚙)** -- compact/full view, keep on top, beep settings, logout
-- **Compact view** -- just the glucose number and trend arrow
-- **Keep on top** -- pin the window above other applications
-- **Warning beep** when glucose drops below a configurable threshold
-- **Stale data detection** -- alternates between last reading and "No Recent Data"
-- **Logbook** viewer for manual scan history
-- **Encrypted credentials** stored locally using Fernet (tied to your Windows user)
-- **Window position** remembered between sessions
-- **mmol/L and mg/dL** unit toggle
-- **Multi-region support** (US, Canada, EU, Germany, France, Australia, Japan)
+- **Real-time glucose monitoring** -- auto-refreshes every 60 seconds (configurable) with trend arrows (rising, falling, stable, etc.)
+- **Auto-login** -- skips the login screen when credentials are cached and "Remember credentials" is enabled
+- **12-hour glucose chart** -- interactive graph with target range band (green shading), low/high alarm lines, and a red dot for the current reading
+- **Higher-resolution chart data** -- accumulates 1-minute readings locally to fill the API's 15-minute graph gaps
+- **Dynamic taskbar icon** -- displays the current glucose number with color-coded background (green = in range, orange = high, red = low, grey = stale/no data)
+- **Gear menu (⚙)** -- single menu for compact/full view toggle, keep on top, low glucose beep settings, and logout
+- **Compact view** -- minimal window showing only the glucose number and trend arrow; toggle via gear menu or the "expand" button
+- **Always on top** -- pin the window above all other applications; persisted between sessions
+- **Low glucose warning beep** -- audible 1000 Hz alert when glucose drops below a configurable threshold (default 4.0 mmol/L)
+- **Stale data detection** -- when the last reading is older than the configured threshold, the display alternates between the last value and "No Recent Data" every 800ms
+- **Logbook viewer** -- table dialog showing manual scan history with timestamps and glucose values
+- **Encrypted credentials** -- email and password stored locally using Fernet encryption, keyed to your Windows username and machine name
+- **Window position** -- saved on close and restored on next launch; centers on screen when no saved position exists or when expanding from compact to full view
+- **mmol/L and mg/dL** -- toggle units in real-time from the header bar; affects the display, chart, taskbar icon, and beep threshold
+- **Multi-region support** -- US, Canada, EU, Germany, France, Australia, Japan, and Global (with automatic region redirect)
+- **Multiple connections** -- switch between linked patients via a dropdown in the header bar
+- **Version display** -- shown in window titles by default; can be hidden with the `hide_version` config key
 
 ## Quick Start
 
@@ -45,12 +48,14 @@ This builds the app and packages it into `bin/LibreLinkUp.zip`.
 
 ## Configuration
 
-Edit `config.json` (next to `main.py` or `LibreLinkUp.exe`):
+Edit `config.json` (next to `main.py` or `LibreLinkUp.exe`). All settings are optional -- missing keys use their defaults.
 
 ```json
 {
   "region": "Canada",
   "unit": "mmol",
+  "target_low_mmol": 3.9,
+  "target_high_mmol": 10.0,
   "refresh_seconds": 60,
   "stale_minutes": 15,
   "low_beep_enabled": true,
@@ -61,27 +66,29 @@ Edit `config.json` (next to `main.py` or `LibreLinkUp.exe`):
 }
 ```
 
-| Setting | Description |
-|---------|-------------|
-| `region` | API region: US, Canada, EU, Germany, France, Australia, Japan |
-| `unit` | `"mmol"` or `"mgdl"` |
-| `refresh_seconds` | How often to poll the API (seconds) |
-| `stale_minutes` | Minutes before a reading is considered stale |
-| `low_beep_enabled` | Enable/disable the low glucose warning beep |
-| `low_beep_threshold_mmol` | Beep when glucose is below this value (mmol/L) |
-| `compact_view` | Start in compact mode (number + trend only) |
-| `always_on_top` | Keep the window above other applications |
-| `remember_credentials` | Save encrypted login credentials |
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `region` | `"Canada"` | API region: US, Canada, EU, Germany, France, Australia, Japan, Global |
+| `unit` | `"mmol"` | Display unit: `"mmol"` or `"mgdl"` |
+| `target_low_mmol` | `3.9` | Lower bound of the target range band on the chart (mmol/L) |
+| `target_high_mmol` | `10.0` | Upper bound of the target range band on the chart (mmol/L) |
+| `refresh_seconds` | `60` | How often to poll the API (seconds) |
+| `stale_minutes` | `15` | Minutes before a reading is considered stale and triggers blinking |
+| `low_beep_enabled` | `true` | Enable/disable the low glucose warning beep |
+| `low_beep_threshold_mmol` | `4.0` | Beep when glucose is below this value (mmol/L); also configurable via gear menu |
+| `compact_view` | `false` | Start in compact mode (number + trend only); toggled via gear menu |
+| `always_on_top` | `false` | Keep the window above other applications; toggled via gear menu |
+| `remember_credentials` | `false` | Save encrypted login credentials for auto-login on next launch |
 
 ### Hidden Settings
 
 These settings are not exposed in the UI. Add them manually to `config.json` if needed.
 
-| Setting | Description |
-|---------|-------------|
-| `hide_version` | `true` to hide the version number from window titles (default: `false`) |
-| `window_x` | Saved window X position (set automatically on close) |
-| `window_y` | Saved window Y position (set automatically on close) |
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `hide_version` | `false` | Hide the version number from window titles |
+| `window_x` | — | Saved window X position (set automatically on close) |
+| `window_y` | — | Saved window Y position (set automatically on close) |
 
 ## Requirements
 
