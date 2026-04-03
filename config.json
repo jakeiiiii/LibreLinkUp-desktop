@@ -1,0 +1,14 @@
+{
+  "region": "Canada",
+  "unit": "mmol",
+  "target_low_mmol": 3.9,
+  "target_high_mmol": 10.0,
+  "refresh_seconds": 60,
+  "stale_minutes": 15,
+  "remember_credentials": false,
+  "email": "",
+  "password": "",
+  "low_beep_enabled": true,
+  "low_beep_threshold_mmol": 4.0,
+  "compact_view": false
+}
