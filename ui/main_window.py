@@ -7,8 +7,8 @@ from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QPixmap, QPainter, QFont, QColor, QIcon
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
-    QComboBox, QCheckBox, QMessageBox, QDialog, QDoubleSpinBox,
-    QDialogButtonBox, QFormLayout,
+    QComboBox, QMessageBox, QDialog, QDoubleSpinBox,
+    QDialogButtonBox, QFormLayout, QMenu,
 )
 
 from api.client import LibreLinkUpClient, LibreLinkUpError
@@ -37,6 +37,10 @@ class MainWindow(QWidget):
         self._is_stale = False
         self._compact = False
 
+        self.setWindowFlags(
+            Qt.Window | Qt.WindowCloseButtonHint
+            | Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint
+        )
         self.setWindowTitle(app_title(config))
         self.resize(420, 620)
         self.setMinimumSize(360, 500)
@@ -146,21 +150,6 @@ class MainWindow(QWidget):
 
         bottom_layout.addStretch()
 
-        self.beep_cb = QCheckBox("")
-        self.beep_cb.setObjectName("beepCheckbox")
-        self.beep_cb.setChecked(self.config.get("low_beep_enabled", True))
-        self.beep_cb.toggled.connect(self._on_beep_toggled)
-        bottom_layout.addWidget(self.beep_cb)
-
-        self.beep_label = QPushButton("")
-        self.beep_label.setObjectName("beepLabel")
-        self.beep_label.setCursor(Qt.PointingHandCursor)
-        self.beep_label.clicked.connect(self._show_beep_threshold_dialog)
-        self._update_beep_label()
-        bottom_layout.addWidget(self.beep_label)
-
-        bottom_layout.addStretch()
-
         logbook_btn = QPushButton("Log")
         logbook_btn.setObjectName("logbookButton")
         logbook_btn.clicked.connect(self._show_logbook)
@@ -168,17 +157,11 @@ class MainWindow(QWidget):
 
         bottom_layout.addStretch()
 
-        compact_btn = QPushButton("Compact")
-        compact_btn.setObjectName("compactButton")
-        compact_btn.clicked.connect(self._toggle_compact)
-        bottom_layout.addWidget(compact_btn)
-
-        bottom_layout.addStretch()
-
-        logout_btn = QPushButton("Logout")
-        logout_btn.setObjectName("logoutButton")
-        logout_btn.clicked.connect(self.logout_requested.emit)
-        bottom_layout.addWidget(logout_btn)
+        gear_btn = QPushButton("\u2699")
+        gear_btn.setObjectName("gearButton")
+        gear_btn.setCursor(Qt.PointingHandCursor)
+        gear_btn.clicked.connect(self._show_gear_menu)
+        bottom_layout.addWidget(gear_btn)
 
         layout.addWidget(bottom)
 
@@ -196,7 +179,7 @@ class MainWindow(QWidget):
         from utils.config import save_config
         save_config(self.config)
         if self._compact:
-            # Save current size, switch to compact
+            # Save current size, switch to compact (keep position)
             self._normal_size = self.size()
             self._header.setVisible(False)
             self._info_bar.setVisible(False)
@@ -217,6 +200,8 @@ class MainWindow(QWidget):
                 self.resize(self._normal_size)
             else:
                 self.resize(420, 620)
+            # Center on screen when expanding to full view
+            self._center_on_screen()
 
     def _setup_blink_timer(self):
         self._blink_timer = QTimer(self)
@@ -252,10 +237,29 @@ class MainWindow(QWidget):
 
     def start(self):
         """Called after login to load initial data."""
+        # Restore saved position or center on screen
+        self._restore_position()
         # Restore compact view if saved
         if self.config.get("compact_view", False):
             self._toggle_compact()
+        # Restore always-on-top if saved
+        if self.config.get("always_on_top", False):
+            self._apply_always_on_top()
         self._load_connections()
+
+    def _restore_position(self):
+        x = self.config.get("window_x")
+        y = self.config.get("window_y")
+        if x is not None and y is not None:
+            self.move(x, y)
+        else:
+            self._center_on_screen()
+
+    def _center_on_screen(self):
+        screen = self.screen().availableGeometry()
+        x = screen.x() + (screen.width() - self.width()) // 2
+        y = screen.y() + (screen.height() - self.height()) // 2
+        self.move(x, y)
 
     def _load_connections(self):
         try:
@@ -379,7 +383,6 @@ class MainWindow(QWidget):
         self.config["unit"] = new_unit
         self.chart.set_unit(new_unit)
         self._update_unit_button()
-        self._update_beep_label()
         # Re-render current data
         if self.graph_data:
             conn = self.graph_data.connection
@@ -450,14 +453,80 @@ class MainWindow(QWidget):
         unit = self.config.get("unit", "mmol")
         self.unit_btn.setText("mmol/L" if unit == "mmol" else "mg/dL")
 
-    def _update_beep_label(self):
-        threshold = self.config.get("low_beep_threshold_mmol", 0)
+    def _show_gear_menu(self):
+        menu = QMenu(self)
+        menu.setObjectName("gearMenu")
+
+        # Compact / Full view
+        compact_action = menu.addAction("Compact View" if not self._compact else "Full View")
+        compact_action.triggered.connect(self._toggle_compact)
+
+        # Keep on top
+        on_top_action = menu.addAction("Keep on Top")
+        on_top_action.setCheckable(True)
+        on_top_action.setChecked(self.config.get("always_on_top", False))
+        on_top_action.triggered.connect(self._toggle_always_on_top)
+
+        menu.addSeparator()
+
+        # Beep toggle with threshold display
+        threshold = self.config.get("low_beep_threshold_mmol", 4.0)
         unit = self.config.get("unit", "mmol")
         if unit == "mgdl":
             val = round(threshold * 18.0)
-            self.beep_label.setText(f"Beep < {val}")
+            unit_str = "mg/dL"
         else:
-            self.beep_label.setText(f"Beep < {threshold}")
+            val = threshold
+            unit_str = "mmol/L"
+        beep_action = menu.addAction(f"Beep < {val} {unit_str}")
+        beep_action.setCheckable(True)
+        beep_action.setChecked(self.config.get("low_beep_enabled", True))
+        beep_action.triggered.connect(self._on_beep_toggled)
+
+        # Set threshold
+        threshold_action = menu.addAction("Set Beep Threshold...")
+        threshold_action.triggered.connect(self._show_beep_threshold_dialog)
+
+        menu.addSeparator()
+
+        # Logout
+        logout_action = menu.addAction("Logout")
+        logout_action.triggered.connect(self._do_logout)
+
+        # Show menu above the gear button
+        gear_btn = self.sender()
+        pos = gear_btn.mapToGlobal(gear_btn.rect().topLeft())
+        menu.exec(pos)
+
+    def _toggle_always_on_top(self, checked):
+        self.config["always_on_top"] = checked
+        self._apply_always_on_top()
+        from utils.config import save_config
+        save_config(self.config)
+
+    def _apply_always_on_top(self):
+        on_top = self.config.get("always_on_top", False)
+        was_visible = self.isVisible()
+        base_flags = (
+            Qt.Window | Qt.WindowCloseButtonHint
+            | Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint
+        )
+        if on_top:
+            self.setWindowFlags(base_flags | Qt.WindowStaysOnTopHint)
+        else:
+            self.setWindowFlags(base_flags)
+        # setWindowFlags hides the window, so re-show if it was visible
+        if was_visible:
+            self.show()
+
+    def _do_logout(self):
+        # Clear cached credentials
+        self.config["remember_credentials"] = False
+        self.config["email"] = ""
+        self.config["password"] = ""
+        from utils.config import save_config
+        save_config(self.config)
+        self.logout_requested.emit()
 
     def _on_beep_toggled(self, checked):
         self.config["low_beep_enabled"] = checked
@@ -499,7 +568,6 @@ class MainWindow(QWidget):
             if unit == "mgdl":
                 val = round(val / 18.0, 1)
             self.config["low_beep_threshold_mmol"] = val
-            self._update_beep_label()
             from utils.config import save_config
             save_config(self.config)
 
@@ -527,6 +595,18 @@ class MainWindow(QWidget):
 
         dialog = LogbookDialog(entries, self.config.get("unit", "mmol"), self)
         dialog.exec()
+
+    def closeEvent(self, event):
+        self._save_position()
+        self.stop_timer()
+        super().closeEvent(event)
+
+    def _save_position(self):
+        pos = self.pos()
+        self.config["window_x"] = pos.x()
+        self.config["window_y"] = pos.y()
+        from utils.config import save_config
+        save_config(self.config)
 
     def stop_timer(self):
         self._timer.stop()

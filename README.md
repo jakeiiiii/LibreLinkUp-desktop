@@ -1,4 +1,4 @@
-# LibreLinkUp Desktop v1.0.0
+# LibreLinkUp Desktop v1.0.1
 
 A Windows desktop app that replicates Abbott's [LibreLinkUp](https://www.librelinkup.com/) Android app, letting you monitor FreeStyle Libre CGM glucose readings directly on your PC -- no Android emulator needed.
 
@@ -7,13 +7,17 @@ A Windows desktop app that replicates Abbott's [LibreLinkUp](https://www.libreli
 ## Features
 
 - **Real-time glucose monitoring** with auto-refresh
+- **Auto-login** -- skips the login screen when credentials are cached
 - **12-hour glucose chart** with target range band and alarm lines
 - **Dynamic taskbar icon** showing current glucose number (color-coded green/orange/red)
+- **Gear menu (⚙)** -- compact/full view, keep on top, beep settings, logout
 - **Compact view** -- just the glucose number and trend arrow
+- **Keep on top** -- pin the window above other applications
 - **Warning beep** when glucose drops below a configurable threshold
 - **Stale data detection** -- alternates between last reading and "No Recent Data"
 - **Logbook** viewer for manual scan history
 - **Encrypted credentials** stored locally using Fernet (tied to your Windows user)
+- **Window position** remembered between sessions
 - **mmol/L and mg/dL** unit toggle
 - **Multi-region support** (US, Canada, EU, Germany, France, Australia, Japan)
 
@@ -52,6 +56,7 @@ Edit `config.json` (next to `main.py` or `LibreLinkUp.exe`):
   "low_beep_enabled": true,
   "low_beep_threshold_mmol": 4.0,
   "compact_view": false,
+  "always_on_top": false,
   "remember_credentials": false
 }
 ```
@@ -65,6 +70,7 @@ Edit `config.json` (next to `main.py` or `LibreLinkUp.exe`):
 | `low_beep_enabled` | Enable/disable the low glucose warning beep |
 | `low_beep_threshold_mmol` | Beep when glucose is below this value (mmol/L) |
 | `compact_view` | Start in compact mode (number + trend only) |
+| `always_on_top` | Keep the window above other applications |
 | `remember_credentials` | Save encrypted login credentials |
 
 ### Hidden Settings
@@ -74,6 +80,8 @@ These settings are not exposed in the UI. Add them manually to `config.json` if 
 | Setting | Description |
 |---------|-------------|
 | `hide_version` | `true` to hide the version number from window titles (default: `false`) |
+| `window_x` | Saved window X position (set automatically on close) |
+| `window_y` | Saved window Y position (set automatically on close) |
 
 ## Requirements
 

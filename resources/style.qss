@@ -164,42 +164,9 @@ QComboBox {
     background-color: #a93226;
 }
 
-#logoutButton {
-    background-color: transparent;
-    color: #888;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    padding: 6px 12px;
-    font-size: 11px;
-}
-
-#logoutButton:hover {
-    color: #c0392b;
-    border-color: #c0392b;
-}
-
 #refreshLabel {
     font-size: 11px;
     color: #aaa;
-}
-
-#beepCheckbox {
-    font-size: 11px;
-    color: #666;
-    spacing: 2px;
-}
-
-#beepLabel {
-    font-size: 11px;
-    color: #c0392b;
-    background-color: transparent;
-    border: none;
-    text-decoration: underline;
-    padding: 0px;
-}
-
-#beepLabel:hover {
-    color: #922b21;
 }
 
 /* ── Compact View ── */
@@ -233,18 +200,40 @@ QComboBox {
     border-color: #c0392b;
 }
 
-#compactButton {
+#gearButton {
     background-color: transparent;
     color: #888;
     border: 1px solid #ccc;
     border-radius: 4px;
     padding: 6px 12px;
-    font-size: 11px;
+    font-size: 16px;
 }
 
-#compactButton:hover {
+#gearButton:hover {
     color: #c0392b;
     border-color: #c0392b;
+}
+
+#gearMenu {
+    background-color: #ffffff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 4px 0px;
+}
+
+#gearMenu::item {
+    padding: 6px 24px;
+}
+
+#gearMenu::item:selected {
+    background-color: #f0f0f0;
+    color: #c0392b;
+}
+
+#gearMenu::separator {
+    height: 1px;
+    background-color: #e0e0e0;
+    margin: 4px 8px;
 }
 
 /* ── Logbook Dialog ── */

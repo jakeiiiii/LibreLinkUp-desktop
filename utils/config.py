@@ -28,6 +28,9 @@ DEFAULTS = {
     "low_beep_enabled": True,
     "low_beep_threshold_mmol": 4.0,  # beep when glucose falls below this (0 = disabled)
     "compact_view": False,
+    "always_on_top": False,
+    "window_x": None,
+    "window_y": None,
 }
 
 # Encrypted fields in the config file

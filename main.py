@@ -72,8 +72,27 @@ class App:
         self.login_window.show()
 
     def run(self) -> int:
+        if self._try_auto_login():
+            return self.qapp.exec()
+
         self.login_window.show()
         return self.qapp.exec()
+
+    def _try_auto_login(self) -> bool:
+        """Attempt login with saved credentials. Returns True if successful."""
+        if not self.config.get("remember_credentials"):
+            return False
+        email = self.config.get("email", "").strip()
+        password = self.config.get("password", "").strip()
+        region = self.config.get("region", "Canada")
+        if not email or not password:
+            return False
+        try:
+            user_info = self.client.login(email, password, region)
+            self._on_login_success(user_info)
+            return True
+        except Exception:
+            return False
 
 
 def main():
