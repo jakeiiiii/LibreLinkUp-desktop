@@ -31,14 +31,14 @@ Auth headers: `Authorization: Bearer {token}` + `Account-Id: sha256(user_id)`
 - Gear menu (⚙): compact/full toggle, keep on top, beep settings, check for updates, logout
 - Accumulates 1-min readings locally to fill API's 15-min graph gaps
 - Stale data (>`stale_minutes`): alternates value / "No Recent Data" at 800ms
-- Taskbar icon: 256px rounded rect, 4-tier color scheme by mmol/L range (<4 red/yellow, 4–10 green/black, 10.1–14.9 yellow/black, 15+ dark red/white), grey "--" when stale
+- Taskbar icon: 256px rounded rect, 4-tier color scheme by mmol/L range (<4 red/yellow, 4–10 green/black, 10.1–14.9 yellow/black, 15+ dark red/white); when stale, flashes between last reading and grey "--" at 800ms
 - Warning beep: 1000Hz 600ms via `winsound.Beep` when below threshold
 - Trend arrows: 1=down 2=↘ 3=→ 4=↗ 5=up
 - Unit conversion: `ValueInMgPerDl / 18.0` = mmol/L
 - Compact view: glucose + trend only, toggled via gear menu, persisted in config
 - Always on top: `WindowStaysOnTopHint`, toggled via gear menu, persisted in config
 - Window position: saved on close, restored on start; centers on screen when expanding from compact to full
-- Auto-update: on startup, background thread checks GitHub Releases API for newer version; if found, downloads `LibreLinkUp.zip`, spawns a `.bat` updater script (timeout → Expand-Archive → relaunch), and exits; manual "Check for Updates..." in gear menu prompts before applying
+- Auto-update: background thread checks GitHub Releases API for newer version on startup and every hour; if found, downloads `LibreLinkUp.zip`, spawns a `.bat` updater script (timeout → Expand-Archive → relaunch), and exits; manual "Check for Updates..." in gear menu prompts before applying
 - Logout clears cached credentials so next launch shows login screen
 - Version in window titles via `app_title(config, suffix)` — hidden `hide_version` config key suppresses it
 
