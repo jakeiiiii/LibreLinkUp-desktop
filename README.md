@@ -11,7 +11,8 @@ A Windows desktop app that replicates Abbott's [LibreLinkUp](https://www.libreli
 - **12-hour glucose chart** -- interactive graph with target range band (green shading), low/high alarm lines, and a red dot for the current reading
 - **Higher-resolution chart data** -- accumulates 1-minute readings locally to fill the API's 15-minute graph gaps
 - **Dynamic taskbar icon** -- displays the current glucose number with a 4-tier color scheme based on mmol/L range: red background with yellow text (below 4), green background with black text (4–10), yellow background with black text (10.1–14.9), dark red background with white text (15+), grey with "--" when stale
-- **Gear menu (⚙)** -- single menu for compact/full view toggle, keep on top, low glucose beep settings, and logout
+- **Auto-update** -- on launch, automatically checks GitHub for a newer release and silently updates in the background; manual "Check for Updates..." also available in the gear menu
+- **Gear menu (⚙)** -- single menu for compact/full view toggle, keep on top, low glucose beep settings, check for updates, and logout
 - **Compact view** -- minimal window showing only the glucose number and trend arrow; toggle via gear menu or the "expand" button
 - **Always on top** -- pin the window above all other applications; persisted between sessions
 - **Low glucose warning beep** -- audible 1000 Hz alert when glucose drops below a configurable threshold (default 4.0 mmol/L)
