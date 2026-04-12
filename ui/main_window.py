@@ -404,13 +404,16 @@ class MainWindow(QWidget):
                 self._stop_blinking()
                 self._compact_reading.setStyleSheet("color: #333;")
 
-                # Color based on alarm state
-                if reading.is_low:
+                # Color based on mmol/L ranges
+                mmol_val = reading.value_mmol
+                if mmol_val < 4:
                     color = "color: #cc0000;"
-                elif reading.is_high:
-                    color = "color: #ff8800;"
-                else:
+                elif mmol_val <= 10:
                     color = "color: #333;"
+                elif mmol_val <= 14.9:
+                    color = "color: #cc8800;"
+                else:
+                    color = "color: #6b1010;"
                 self.reading_label.setStyleSheet(color)
                 self._compact_reading.setStyleSheet(color)
 
@@ -480,28 +483,35 @@ class MainWindow(QWidget):
         painter.setRenderHint(QPainter.Antialiasing)
         painter.setRenderHint(QPainter.TextAntialiasing)
 
-        radius = 32  # rounded corner radius
+        radius = 20  # rounded corner radius
 
         if reading:
             unit = self.config.get("unit", "mmol")
             val = reading.value(unit)
             text = str(val)
 
-            # Background rounded rect color based on state
-            if reading.is_low:
-                bg_color = QColor("#cc0000")
-            elif reading.is_high:
-                bg_color = QColor("#ff8800")
+            # Background and text color based on mmol/L ranges
+            mmol_val = reading.value_mmol
+            if mmol_val < 4:
+                bg_color = QColor("#cc0000")       # red
+                fg_color = QColor("#ffdd00")        # yellow
+            elif mmol_val <= 10:
+                bg_color = QColor("#2ecc71")        # light green
+                fg_color = QColor("black")
+            elif mmol_val <= 14.9:
+                bg_color = QColor("#f0c800")        # yellow
+                fg_color = QColor("black")
             else:
-                bg_color = QColor("#2ecc71")
+                bg_color = QColor("#6b1010")        # bloody/dark red
+                fg_color = QColor("white")
 
             painter.setBrush(bg_color)
             painter.setPen(Qt.NoPen)
             painter.drawRoundedRect(0, 0, size, size, radius, radius)
 
             # Text — large and bold to fill the icon
-            painter.setPen(QColor("black"))
-            font_size = 80 if len(text) <= 4 else 64
+            painter.setPen(fg_color)
+            font_size = 120 if len(text) <= 3 else (100 if len(text) <= 4 else 80)
             font = QFont("Segoe UI", font_size, QFont.Bold)
             painter.setFont(font)
             painter.drawText(pixmap.rect(), Qt.AlignCenter, text)
@@ -509,8 +519,8 @@ class MainWindow(QWidget):
             painter.setBrush(QColor("#888"))
             painter.setPen(Qt.NoPen)
             painter.drawRoundedRect(0, 0, size, size, radius, radius)
-            painter.setPen(QColor("black"))
-            painter.setFont(QFont("Segoe UI", 90, QFont.Bold))
+            painter.setPen(QColor("white"))
+            painter.setFont(QFont("Segoe UI", 120, QFont.Bold))
             painter.drawText(pixmap.rect(), Qt.AlignCenter, "--")
 
         painter.end()

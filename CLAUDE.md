@@ -1,4 +1,4 @@
-# LibreLinkUp Desktop v1.0.3
+# LibreLinkUp Desktop v1.0.4
 
 Windows desktop app for monitoring CGM glucose readings from a FreeStyle Libre sensor via Abbott's unofficial LibreLinkUp API.
 
@@ -16,7 +16,7 @@ Python 3.13 · PySide6 (Qt) · pyqtgraph · requests · cryptography (Fernet) ·
 - `utils/config.py` — JSON config with Fernet-encrypted credentials
 - `resources/style.qss` — Qt stylesheet (red/white theme)
 - `config.json` — User-editable defaults (lives next to exe or main.py)
-- `VERSION` — Version string (1.0.3)
+- `VERSION` — Version string (1.0.4)
 
 ## API
 Base: `https://api-{region}.libreview.io` (regions: us, ca, eu, de, fr, au, jp)
@@ -30,7 +30,7 @@ Auth headers: `Authorization: Bearer {token}` + `Account-Id: sha256(user_id)`
 - Gear menu (⚙): compact/full toggle, keep on top, beep settings, logout
 - Accumulates 1-min readings locally to fill API's 15-min graph gaps
 - Stale data (>`stale_minutes`): alternates value / "No Recent Data" at 800ms
-- Taskbar icon: 256px rounded rect, bg green/orange/red by range, grey "--" when stale
+- Taskbar icon: 256px rounded rect, 4-tier color scheme by mmol/L range (<4 red/yellow, 4–10 green/black, 10.1–14.9 yellow/black, 15+ dark red/white), grey "--" when stale
 - Warning beep: 1000Hz 600ms via `winsound.Beep` when below threshold
 - Trend arrows: 1=down 2=↘ 3=→ 4=↗ 5=up
 - Unit conversion: `ValueInMgPerDl / 18.0` = mmol/L

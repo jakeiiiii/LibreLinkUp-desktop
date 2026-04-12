@@ -1,4 +1,4 @@
-# LibreLinkUp Desktop v1.0.3
+# LibreLinkUp Desktop v1.0.4
 
 A Windows desktop app that replicates Abbott's [LibreLinkUp](https://www.librelinkup.com/) Android app, letting you monitor FreeStyle Libre CGM glucose readings directly on your PC -- no Android emulator needed.
 
@@ -10,7 +10,7 @@ A Windows desktop app that replicates Abbott's [LibreLinkUp](https://www.libreli
 - **Auto-login** -- skips the login screen when credentials are cached and "Remember credentials" is enabled
 - **12-hour glucose chart** -- interactive graph with target range band (green shading), low/high alarm lines, and a red dot for the current reading
 - **Higher-resolution chart data** -- accumulates 1-minute readings locally to fill the API's 15-minute graph gaps
-- **Dynamic taskbar icon** -- displays the current glucose number with color-coded background (green = in range, orange = high, red = low, grey = stale/no data)
+- **Dynamic taskbar icon** -- displays the current glucose number with a 4-tier color scheme based on mmol/L range: red background with yellow text (below 4), green background with black text (4–10), yellow background with black text (10.1–14.9), dark red background with white text (15+), grey with "--" when stale
 - **Gear menu (⚙)** -- single menu for compact/full view toggle, keep on top, low glucose beep settings, and logout
 - **Compact view** -- minimal window showing only the glucose number and trend arrow; toggle via gear menu or the "expand" button
 - **Always on top** -- pin the window above all other applications; persisted between sessions
