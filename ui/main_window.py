@@ -122,6 +122,7 @@ class MainWindow(QWidget):
         self._compact = False
         self._last_icon: QIcon | None = None
         self._last_hicon = None
+        self._last_stale_reading = None  # last reading to flash on icon when stale
         self._tray_icon = QSystemTrayIcon(self)
         self._tray_icon.activated.connect(self._on_tray_activated)
 
@@ -308,6 +309,8 @@ class MainWindow(QWidget):
             self.trend_label.setText("")
             self._compact_reading.setText("--")
             self._compact_trend.setText("")
+        # Flash the taskbar icon between last reading and "--"
+        self._update_stale_icon()
 
     def _start_blinking(self, reading_text="--", trend_text="",
                          compact_text="--", compact_trend=""):
@@ -334,8 +337,11 @@ class MainWindow(QWidget):
         if self.config.get("always_on_top", False):
             self._apply_always_on_top()
         self._load_connections()
-        # Check for updates in background
+        # Check for updates in background, then every hour
         self._start_update_check()
+        self._update_check_timer = QTimer(self)
+        self._update_check_timer.timeout.connect(self._start_update_check)
+        self._update_check_timer.start(60 * 60 * 1000)  # every 1 hour
 
     def _restore_position(self):
         x = self.config.get("window_x")
@@ -465,7 +471,12 @@ class MainWindow(QWidget):
         self.chart.update_data(all_readings, conn.current_reading)
 
         # Update taskbar icon — show "—" when stale/no signal
-        self._update_taskbar_icon(None if self._is_stale else conn.current_reading)
+        if self._is_stale:
+            self._last_stale_reading = conn.current_reading
+            self._update_taskbar_icon(None)
+        else:
+            self._last_stale_reading = None
+            self._update_taskbar_icon(conn.current_reading)
 
         now = datetime.now().strftime("%I:%M %p")
         self.refresh_label.setText(f"Updated {now}")
@@ -576,6 +587,13 @@ class MainWindow(QWidget):
                 ctypes.windll.user32.SendMessageW(hwnd, _WM_SETICON, _ICON_SMALL, hicon)
         except Exception:
             pass  # fall back to Qt icon silently
+
+    def _update_stale_icon(self):
+        """Flash the taskbar icon between the last reading and '--' when stale."""
+        if self._blink_visible and self._last_stale_reading:
+            self._update_taskbar_icon(self._last_stale_reading)
+        else:
+            self._update_taskbar_icon(None)
 
     def _update_unit_button(self):
         unit = self.config.get("unit", "mmol")
@@ -802,3 +820,5 @@ class MainWindow(QWidget):
     def stop_timer(self):
         self._timer.stop()
         self._stop_blinking()
+        if hasattr(self, "_update_check_timer"):
+            self._update_check_timer.stop()
