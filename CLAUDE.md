@@ -49,3 +49,18 @@ python main.py            # dev run
 build.bat                 # PyInstaller → dist/LibreLinkUp/LibreLinkUp.exe
 cleanup.bat               # remove build/, dist/, __pycache__, .pyc, .spec
 ```
+
+## Workflow Prompts
+
+### Commit only (no release)
+When the user says: **"commit and push"**
+- Commit and push changes. Do NOT bump the version, tag, or create a GitHub Release.
+
+### Cut a new release
+When the user says: **"release"**
+- Bump to the next patch version (e.g. 1.0.6 → 1.0.7)
+- Update version everywhere: `utils/version.py`, `VERSION`, `README.md`, `CLAUDE.md`
+- Rebuild `bin/LibreLinkUp.zip` via PyInstaller + Compress-Archive
+- Commit and push all changes
+- Create git tag (e.g. `v1.0.7`) and push it
+- Create a GitHub Release with `bin/LibreLinkUp.zip` attached
