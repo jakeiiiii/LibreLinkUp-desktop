@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 
 import winsound
 
-from PySide6.QtCore import Qt, QTimer, Signal
+from PySide6.QtCore import Qt, QTimer, Signal, QThread
 from PySide6.QtGui import QPixmap, QPainter, QFont, QColor, QIcon, QImage
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
@@ -20,6 +20,17 @@ from ui.graph_widget import GlucoseChart
 from ui.logbook_dialog import LogbookDialog
 
 logger = logging.getLogger(__name__)
+
+
+class _UpdateChecker(QThread):
+    """Background thread that checks GitHub for a newer release."""
+    update_available = Signal(str, str)  # (new_version, download_url)
+
+    def run(self):
+        from utils.updater import check_for_update
+        result = check_for_update()
+        if result:
+            self.update_available.emit(*result)
 
 
 # ── Win32 helpers for dynamic taskbar icon ──
@@ -323,6 +334,8 @@ class MainWindow(QWidget):
         if self.config.get("always_on_top", False):
             self._apply_always_on_top()
         self._load_connections()
+        # Check for updates in background
+        self._start_update_check()
 
     def _restore_position(self):
         x = self.config.get("window_x")
@@ -604,6 +617,12 @@ class MainWindow(QWidget):
 
         menu.addSeparator()
 
+        # Check for updates
+        update_action = menu.addAction("Check for Updates...")
+        update_action.triggered.connect(self._check_for_updates)
+
+        menu.addSeparator()
+
         # Logout
         logout_action = menu.addAction("Logout")
         logout_action.triggered.connect(self._do_logout)
@@ -741,6 +760,44 @@ class MainWindow(QWidget):
         self.config["window_y"] = pos.y()
         from utils.config import save_config
         save_config(self.config)
+
+    def _start_update_check(self):
+        """Run a background update check on startup."""
+        self._update_thread = _UpdateChecker()
+        self._update_thread.update_available.connect(self._on_update_available)
+        self._update_thread.start()
+
+    def _on_update_available(self, new_version: str, download_url: str):
+        """Called from background thread when an update is found — auto-applies."""
+        from utils.updater import download_and_apply
+
+        logger.info("Auto-updating to v%s", new_version)
+        download_and_apply(download_url)
+
+    def _check_for_updates(self):
+        """Check GitHub for a newer release and offer to install it."""
+        from utils.updater import check_for_update, download_and_apply
+
+        result = check_for_update()
+        if result is None:
+            QMessageBox.information(self, "Up to Date", "You are running the latest version.")
+            return
+
+        new_version, download_url = result
+        reply = QMessageBox.question(
+            self,
+            "Update Available",
+            f"Version {new_version} is available (you have {self._current_version()}).\n\n"
+            "Download and install now? The app will restart.",
+            QMessageBox.Yes | QMessageBox.No,
+        )
+        if reply == QMessageBox.Yes:
+            download_and_apply(download_url)
+
+    @staticmethod
+    def _current_version() -> str:
+        from utils.version import __version__
+        return __version__
 
     def stop_timer(self):
         self._timer.stop()
