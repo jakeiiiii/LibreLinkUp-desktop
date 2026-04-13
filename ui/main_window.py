@@ -126,6 +126,12 @@ class MainWindow(QWidget):
         self._tray_icon = QSystemTrayIcon(self)
         self._tray_icon.activated.connect(self._on_tray_activated)
 
+        # Prevent screensaver / display sleep while the app is running
+        if self.config.get("prevent_sleep", True):
+            ES_CONTINUOUS = 0x80000000
+            ES_DISPLAY_REQUIRED = 0x00000002
+            ctypes.windll.kernel32.SetThreadExecutionState(ES_CONTINUOUS | ES_DISPLAY_REQUIRED)
+
         self.setWindowFlags(
             Qt.Window | Qt.WindowCloseButtonHint
             | Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint
@@ -770,6 +776,10 @@ class MainWindow(QWidget):
         self._save_position()
         self._tray_icon.hide()
         self.stop_timer()
+        # Re-enable screensaver / display sleep
+        if self.config.get("prevent_sleep", True):
+            ES_CONTINUOUS = 0x80000000
+            ctypes.windll.kernel32.SetThreadExecutionState(ES_CONTINUOUS)
         super().closeEvent(event)
 
     def _save_position(self):

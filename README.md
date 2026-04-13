@@ -1,4 +1,4 @@
-# LibreLinkUp Desktop v1.0.8
+# LibreLinkUp Desktop v1.0.9
 
 A Windows desktop app that replicates Abbott's [LibreLinkUp](https://www.librelinkup.com/) Android app, letting you monitor FreeStyle Libre CGM glucose readings directly on your PC -- no Android emulator needed.
 
@@ -87,6 +87,7 @@ These settings are not exposed in the UI. Add them manually to `config.json` if 
 
 | Setting | Default | Description |
 |---------|---------|-------------|
+| `prevent_sleep` | `true` | Prevent screensaver and display sleep while the app is running |
 | `hide_version` | `false` | Hide the version number from window titles |
 | `window_x` | — | Saved window X position (set automatically on close) |
 | `window_y` | — | Saved window Y position (set automatically on close) |

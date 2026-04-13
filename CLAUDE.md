@@ -1,4 +1,4 @@
-# LibreLinkUp Desktop v1.0.8
+# LibreLinkUp Desktop v1.0.9
 
 Windows desktop app for monitoring CGM glucose readings from a FreeStyle Libre sensor via Abbott's unofficial LibreLinkUp API.
 
@@ -17,7 +17,7 @@ Python 3.13 · PySide6 (Qt) · pyqtgraph · requests · cryptography (Fernet) ·
 - `utils/config.py` — JSON config with Fernet-encrypted credentials
 - `resources/style.qss` — Qt stylesheet (red/white theme)
 - `config.json` — User-editable defaults (lives next to exe or main.py)
-- `VERSION` — Version string (1.0.8)
+- `VERSION` — Version string (1.0.9)
 
 ## API
 Base: `https://api-{region}.libreview.io` (regions: us, ca, eu, de, fr, au, jp)
@@ -39,6 +39,7 @@ Auth headers: `Authorization: Bearer {token}` + `Account-Id: sha256(user_id)`
 - Always on top: `WindowStaysOnTopHint`, toggled via gear menu, persisted in config
 - Window position: saved on close, restored on start; centers on screen when expanding from compact to full
 - Auto-update: background thread checks GitHub Releases API for newer version on startup and every hour; if found, downloads `LibreLinkUp.zip`, spawns a `.bat` updater script (timeout → Expand-Archive → relaunch), and exits; manual "Check for Updates..." in gear menu prompts before applying
+- Prevent sleep: blocks screensaver and display sleep via `SetThreadExecutionState`; controlled by `prevent_sleep` config key (default `true`)
 - Logout clears cached credentials so next launch shows login screen
 - Version in window titles via `app_title(config, suffix)` — hidden `hide_version` config key suppresses it
 
