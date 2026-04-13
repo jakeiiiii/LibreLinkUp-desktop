@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LibreLinkUp</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3"></script>
+<style>
+  :root {
+    --red: #c0392b;
+    --red-hover: #a93226;
+    --red-pressed: #922b21;
+    --green: #2ecc71;
+    --yellow: #f0c800;
+    --dark-red: #6b1010;
+    --bg: #ffffff;
+    --text: #333;
+    --muted: #888;
+    --border: #e0e0e0;
+    --light-bg: #f8f8f8;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 14px;
+    color: var(--text);
+    background: var(--bg);
+    min-height: 100vh;
+  }
+
+  /* ── Login Screen ── */
+  #loginScreen {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: var(--light-bg);
+  }
+  .login-card {
+    background: white;
+    border-radius: 8px;
+    padding: 32px;
+    width: 380px;
+    max-width: 95vw;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.1);
+  }
+  .login-card h1 {
+    text-align: center;
+    color: var(--red);
+    font-size: 22px;
+    margin-bottom: 20px;
+  }
+  .form-group { margin-bottom: 12px; }
+  .form-group label { display: block; margin-bottom: 4px; font-size: 13px; color: var(--muted); }
+  .form-group select,
+  .form-group input[type="email"],
+  .form-group input[type="password"],
+  .form-group input[type="text"] {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-group input:focus,
+  .form-group select:focus { border-color: var(--red); }
+  .remember-row { display: flex; align-items: center; gap: 6px; margin-bottom: 16px; font-size: 13px; }
+  .remember-row input { accent-color: var(--red); }
+  .login-btn {
+    width: 100%;
+    padding: 12px;
+    background: var(--red);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .login-btn:hover { background: var(--red-hover); }
+  .login-btn:active { background: var(--red-pressed); }
+  .login-btn:disabled { background: #ccc; cursor: default; }
+  .login-status { text-align: center; color: var(--red); font-size: 13px; margin-top: 12px; min-height: 20px; }
+
+  /* ── Main App ── */
+  #appScreen { display: none; min-height: 100vh; }
+  .header-bar {
+    background: var(--red);
+    color: white;
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    gap: 12px;
+    min-height: 48px;
+  }
+  .header-bar select {
+    background: var(--red-hover);
+    color: white;
+    border: 1px solid var(--red-pressed);
+    border-radius: 3px;
+    padding: 4px 8px;
+    font-size: 13px;
+    outline: none;
+  }
+  .header-bar select option { background: white; color: var(--text); }
+  .header-title {
+    flex: 1;
+    text-align: center;
+    font-size: 16px;
+    font-weight: bold;
+  }
+  .unit-btn {
+    background: transparent;
+    color: white;
+    border: 1px solid rgba(255,255,255,0.5);
+    border-radius: 3px;
+    padding: 4px 8px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .unit-btn:hover { background: rgba(255,255,255,0.15); }
+
+  .info-bar {
+    background: var(--light-bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 16px;
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    min-height: 50px;
+  }
+  #currentReading { font-size: 28px; font-weight: bold; }
+  #trendArrow { font-size: 30px; }
+  .stale { color: var(--muted) !important; }
+
+  .chart-container {
+    position: relative;
+    width: 100%;
+    height: 350px;
+    padding: 8px 8px 0 8px;
+  }
+  .chart-container canvas { width: 100% !important; height: 100% !important; }
+
+  .bottom-bar {
+    background: var(--light-bg);
+    border-top: 1px solid var(--border);
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  #refreshLabel { font-size: 12px; color: #aaa; }
+  .log-btn {
+    background: var(--red);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 24px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    margin: 0 auto;
+  }
+  .log-btn:hover { background: var(--red-hover); }
+  .gear-btn {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 16px;
+    cursor: pointer;
+    position: relative;
+  }
+  .gear-btn:hover { color: var(--red); border-color: var(--red); }
+
+  /* ── Gear dropdown ── */
+  .gear-menu {
+    display: none;
+    position: absolute;
+    bottom: 100%;
+    right: 0;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    min-width: 200px;
+    z-index: 100;
+    margin-bottom: 4px;
+  }
+  .gear-menu.open { display: block; }
+  .gear-menu-item {
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .gear-menu-item:hover { background: #f0f0f0; color: var(--red); }
+  .gear-menu-sep { height: 1px; background: var(--border); margin: 4px 8px; }
+
+  /* ── Logbook modal ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 200;
+    justify-content: center;
+    align-items: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: white;
+    border-radius: 8px;
+    padding: 24px;
+    max-width: 500px;
+    width: 95vw;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+  }
+  .modal h2 { margin-bottom: 16px; color: var(--red); }
+  .modal table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .modal th { background: #f0f0f0; padding: 8px; border-bottom: 1px solid #ccc; text-align: left; font-weight: bold; }
+  .modal td { padding: 6px 8px; border-bottom: 1px solid var(--border); }
+  .modal-close { float: right; background: none; border: none; font-size: 20px; cursor: pointer; color: var(--muted); }
+  .modal-close:hover { color: var(--red); }
+
+  /* ── Beep threshold modal ── */
+  .beep-modal { text-align: center; }
+  .beep-modal label { font-size: 14px; }
+  .beep-modal input[type="number"] {
+    width: 100px;
+    padding: 6px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    margin: 12px 8px;
+    text-align: center;
+  }
+  .beep-modal .btn-row { margin-top: 16px; display: flex; justify-content: center; gap: 12px; }
+  .beep-modal button {
+    padding: 8px 20px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .beep-modal .btn-ok { background: var(--red); color: white; border: none; }
+
+  /* ── Worker config modal ── */
+  .config-note {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 4px;
+    padding: 12px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════ LOGIN SCREEN ════════ -->
+<div id="loginScreen">
+  <div class="login-card">
+    <h1>LibreLinkUp</h1>
+
+    <div id="workerConfig" class="form-group">
+      <label>Worker URL</label>
+      <input type="text" id="workerUrl" placeholder="https://your-worker.workers.dev">
+      <div style="font-size:11px;color:#888;margin-top:4px;">
+        Your Cloudflare Worker proxy URL.
+        See <a href="https://github.com/jake/LibreLinkUp-desktop/tree/main/web#readme" target="_blank">setup guide</a>.
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Region</label>
+      <select id="regionSelect">
+        <option value="api-us.libreview.io">US</option>
+        <option value="api-ca.libreview.io" selected>Canada</option>
+        <option value="api-eu.libreview.io">EU</option>
+        <option value="api-de.libreview.io">Germany</option>
+        <option value="api-fr.libreview.io">France</option>
+        <option value="api-au.libreview.io">Australia</option>
+        <option value="api-jp.libreview.io">Japan</option>
+        <option value="api.libreview.io">Global</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" id="emailInput" placeholder="Email">
+    </div>
+
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="passwordInput" placeholder="Password">
+    </div>
+
+    <div class="remember-row">
+      <input type="checkbox" id="rememberCheck">
+      <label for="rememberCheck">Remember credentials</label>
+    </div>
+
+    <button class="login-btn" id="loginBtn" onclick="doLogin()">Login</button>
+    <div class="login-status" id="loginStatus"></div>
+  </div>
+</div>
+
+<!-- ════════ MAIN APP SCREEN ════════ -->
+<div id="appScreen">
+  <div class="header-bar">
+    <select id="connectionSelect" onchange="onConnectionChange()"></select>
+    <div class="header-title">LibreLinkUp</div>
+    <button class="unit-btn" id="unitBtn" onclick="toggleUnit()">mmol/L</button>
+  </div>
+
+  <div class="info-bar">
+    <span id="currentReading">---</span>
+    <span id="trendArrow"></span>
+  </div>
+
+  <div class="chart-container">
+    <canvas id="glucoseChart"></canvas>
+  </div>
+
+  <div class="bottom-bar">
+    <span id="refreshLabel"></span>
+    <button class="log-btn" onclick="showLogbook()">Log</button>
+    <div style="position:relative;">
+      <button class="gear-btn" onclick="toggleGearMenu(event)">&#9881;</button>
+      <div class="gear-menu" id="gearMenu">
+        <div class="gear-menu-item" onclick="toggleBeep()">
+          <span id="beepCheck">&#9745;</span> <span id="beepLabel">Beep &lt; 4.0 mmol/L</span>
+        </div>
+        <div class="gear-menu-item" onclick="showBeepThreshold()">Set Beep Threshold...</div>
+        <div class="gear-menu-sep"></div>
+        <div class="gear-menu-item" onclick="doLogout()">Logout</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ LOGBOOK MODAL ════════ -->
+<div class="modal-overlay" id="logbookModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeLogbook()">&times;</button>
+    <h2>Logbook</h2>
+    <table>
+      <thead><tr><th>Time</th><th>Value</th></tr></thead>
+      <tbody id="logbookBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ════════ BEEP THRESHOLD MODAL ════════ -->
+<div class="modal-overlay" id="beepModal">
+  <div class="modal beep-modal">
+    <button class="modal-close" onclick="closeBeepModal()">&times;</button>
+    <h2>Beep Threshold</h2>
+    <label>Beep when below:</label><br>
+    <input type="number" id="beepThresholdInput" step="0.1" min="0" max="22" value="4.0">
+    <span id="beepThresholdUnit">mmol/L</span>
+    <div class="btn-row">
+      <button onclick="closeBeepModal()">Cancel</button>
+      <button class="btn-ok" onclick="saveBeepThreshold()">OK</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// Crypto helpers — AES-GCM with PBKDF2-derived key
+// ══════════════════════════════════════════════════════════════
+const CRYPTO_SALT = new Uint8Array([76,76,85,45,119,101,98,45,115,97,108,116,45,118,49]); // "LLU-web-salt-v1"
+const CRYPTO_PASS = "LibreLinkUp-desktop-web-v1";
+
+async function deriveKey() {
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey("raw", enc.encode(CRYPTO_PASS), "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey(
+    { name: "PBKDF2", salt: CRYPTO_SALT, iterations: 100000, hash: "SHA-256" },
+    keyMaterial,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt", "decrypt"]
+  );
+}
+
+async function encryptText(plaintext) {
+  const key = await deriveKey();
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const enc = new TextEncoder();
+  const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, enc.encode(plaintext));
+  // Store as base64: iv + ciphertext
+  const combined = new Uint8Array(iv.length + ciphertext.byteLength);
+  combined.set(iv);
+  combined.set(new Uint8Array(ciphertext), iv.length);
+  return btoa(String.fromCharCode(...combined));
+}
+
+async function decryptText(b64) {
+  try {
+    const key = await deriveKey();
+    const raw = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    const iv = raw.slice(0, 12);
+    const ciphertext = raw.slice(12);
+    const plaintext = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ciphertext);
+    return new TextDecoder().decode(plaintext);
+  } catch { return ""; }
+}
+
+// ══════════════════════════════════════════════════════════════
+// State
+// ══════════════════════════════════════════════════════════════
+let workerUrl = "";
+let regionHost = "api-ca.libreview.io";
+let authToken = null;
+let accountId = null;
+let connections = [];
+let currentConnection = null;
+let graphData = null;
+let recentReadings = [];
+let unit = "mmol";
+let refreshTimer = null;
+let blinkTimer = null;
+let blinkVisible = true;
+let isStale = false;
+let lastReadingText = "";
+let lastTrendText = "";
+let beepEnabled = true;
+let beepThresholdMmol = 4.0;
+let chart = null;
+
+const MGDL_TO_MMOL = 18.0;
+const TREND_ARROWS = { 1: "\u2193", 2: "\u2198", 3: "\u2192", 4: "\u2197", 5: "\u2191" };
+
+// ══════════════════════════════════════════════════════════════
+// localStorage config
+// ══════════════════════════════════════════════════════════════
+function saveConfig(obj) { localStorage.setItem("llu_config", JSON.stringify(obj)); }
+function loadConfig() {
+  try { return JSON.parse(localStorage.getItem("llu_config")) || {}; } catch { return {}; }
+}
+
+async function loadSavedState() {
+  const cfg = loadConfig();
+  if (cfg.workerUrl) document.getElementById("workerUrl").value = cfg.workerUrl;
+  if (cfg.region) document.getElementById("regionSelect").value = cfg.region;
+  if (cfg.unit) unit = cfg.unit;
+  if (cfg.beepEnabled !== undefined) beepEnabled = cfg.beepEnabled;
+  if (cfg.beepThresholdMmol !== undefined) beepThresholdMmol = cfg.beepThresholdMmol;
+  if (cfg.remember && cfg.encEmail && cfg.encPassword) {
+    document.getElementById("rememberCheck").checked = true;
+    document.getElementById("emailInput").value = await decryptText(cfg.encEmail);
+    document.getElementById("passwordInput").value = await decryptText(cfg.encPassword);
+  }
+  updateUnitBtn();
+  updateBeepLabel();
+}
+
+async function saveCredentials(email, password, remember) {
+  const cfg = loadConfig();
+  cfg.remember = remember;
+  if (remember) {
+    cfg.encEmail = await encryptText(email);
+    cfg.encPassword = await encryptText(password);
+  } else {
+    delete cfg.encEmail;
+    delete cfg.encPassword;
+  }
+  saveConfig(cfg);
+}
+
+function savePref(key, value) {
+  const cfg = loadConfig();
+  cfg[key] = value;
+  saveConfig(cfg);
+}
+
+// ══════════════════════════════════════════════════════════════
+// API calls (via worker proxy)
+// ══════════════════════════════════════════════════════════════
+async function apiCall(method, path, body) {
+  const headers = {
+    "Content-Type": "application/json",
+    "X-Region": regionHost,
+  };
+  if (authToken) headers["Authorization"] = "Bearer " + authToken;
+  if (accountId) headers["Account-Id"] = accountId;
+
+  const url = workerUrl.replace(/\/+$/, "") + path;
+  const resp = await fetch(url, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${resp.statusText}`);
+  return resp.json();
+}
+
+async function sha256(message) {
+  const data = new TextEncoder().encode(message);
+  const hash = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+// ══════════════════════════════════════════════════════════════
+// Login
+// ══════════════════════════════════════════════════════════════
+async function doLogin() {
+  const email = document.getElementById("emailInput").value.trim();
+  const password = document.getElementById("passwordInput").value.trim();
+  const region = document.getElementById("regionSelect").value;
+  const workerInput = document.getElementById("workerUrl").value.trim();
+  const remember = document.getElementById("rememberCheck").checked;
+  const status = document.getElementById("loginStatus");
+
+  if (!workerInput) { status.textContent = "Please enter your Worker URL."; return; }
+  if (!email || !password) { status.textContent = "Please enter email and password."; return; }
+
+  workerUrl = workerInput;
+  regionHost = region;
+
+  document.getElementById("loginBtn").disabled = true;
+  status.textContent = "Logging in...";
+
+  try {
+    let body = await apiCall("POST", "/llu/auth/login", { email, password });
+    let data = body.data || {};
+
+    // Handle region redirect
+    if (data.redirect) {
+      const newRegion = data.region;
+      if (newRegion) {
+        regionHost = "api-" + newRegion + ".libreview.io";
+        body = await apiCall("POST", "/llu/auth/login", { email, password });
+        data = body.data || {};
+      }
+    }
+
+    if (body.status === 4) {
+      throw new Error("Account requires accepting terms of use. Please log in via the LibreLinkUp app first.");
+    }
+    if (body.status !== 0) {
+      throw new Error((body.error && body.error.message) || "Login failed");
+    }
+
+    const ticket = data.authTicket || {};
+    authToken = ticket.token;
+    const userId = (data.user || {}).id;
+    if (userId) accountId = await sha256(userId);
+
+    if (!authToken) throw new Error("No authentication token received");
+
+    // Save state
+    savePref("workerUrl", workerUrl);
+    savePref("region", region);
+    await saveCredentials(email, password, remember);
+
+    showApp();
+  } catch (e) {
+    status.textContent = e.message;
+  } finally {
+    document.getElementById("loginBtn").disabled = false;
+  }
+}
+
+// Enter key triggers login
+document.getElementById("passwordInput").addEventListener("keydown", e => { if (e.key === "Enter") doLogin(); });
+document.getElementById("emailInput").addEventListener("keydown", e => { if (e.key === "Enter") doLogin(); });
+
+// ══════════════════════════════════════════════════════════════
+// App screen
+// ══════════════════════════════════════════════════════════════
+function showApp() {
+  document.getElementById("loginScreen").style.display = "none";
+  document.getElementById("appScreen").style.display = "block";
+  document.title = "LibreLinkUp";
+  initChart();
+  loadConnections();
+  refreshTimer = setInterval(refreshData, 60000);
+}
+
+async function loadConnections() {
+  try {
+    const body = await apiCall("GET", "/llu/connections");
+    if (body.status !== 0) throw new Error("Failed to fetch connections");
+
+    connections = body.data || [];
+    const sel = document.getElementById("connectionSelect");
+    sel.innerHTML = "";
+    connections.forEach((c, i) => {
+      const opt = document.createElement("option");
+      opt.value = i;
+      opt.textContent = ((c.firstName || "") + " " + (c.lastName || "")).trim();
+      sel.appendChild(opt);
+    });
+
+    if (connections.length > 0) {
+      currentConnection = connections[0];
+      refreshData();
+    }
+  } catch (e) {
+    alert("Failed to load connections: " + e.message);
+  }
+}
+
+function onConnectionChange() {
+  const idx = parseInt(document.getElementById("connectionSelect").value);
+  if (idx >= 0 && idx < connections.length) {
+    currentConnection = connections[idx];
+    recentReadings = [];
+    refreshData();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// Data refresh
+// ══════════════════════════════════════════════════════════════
+async function refreshData() {
+  if (!currentConnection) return;
+  const pid = currentConnection.patientId;
+
+  try {
+    const body = await apiCall("GET", `/llu/connections/${pid}/graph`);
+    if (body.status !== 0) throw new Error("Failed to fetch graph data");
+
+    const data = body.data || {};
+    const conn = data.connection || {};
+    const gm = conn.glucoseMeasurement;
+    const apiReadings = (data.graphData || []).map(parseReading).sort((a, b) => a.ts - b.ts);
+
+    // Current reading
+    const reading = gm ? parseReading(gm) : null;
+    updateDisplay(reading, conn);
+
+    // Accumulate recent readings
+    if (reading) {
+      if (!recentReadings.length || reading.ts > recentReadings[recentReadings.length - 1].ts) {
+        recentReadings.push(reading);
+      }
+    }
+
+    // Build full list: API + accumulated recent
+    let allReadings = [...apiReadings];
+    if (allReadings.length && recentReadings.length) {
+      const lastGraphTs = allReadings[allReadings.length - 1].ts;
+      const extras = recentReadings.filter(r => r.ts > lastGraphTs);
+      allReadings.push(...extras);
+    } else if (recentReadings.length) {
+      allReadings.push(...recentReadings);
+    }
+
+    // Prune old accumulated readings (12h)
+    const cutoff = Date.now() - 12 * 60 * 60 * 1000;
+    recentReadings = recentReadings.filter(r => r.ts > cutoff);
+
+    // Update chart
+    updateChart(allReadings, reading, conn);
+
+    // Timestamp
+    const now = new Date();
+    document.getElementById("refreshLabel").textContent =
+      "Updated " + now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+
+  } catch (e) {
+    document.getElementById("refreshLabel").textContent = "Error: " + e.message;
+  }
+}
+
+function parseReading(data) {
+  const tsStr = data.Timestamp || data.FactoryTimestamp || "";
+  let ts;
+  try {
+    // Format: "M/d/yyyy h:mm:ss a"
+    ts = new Date(tsStr).getTime();
+    if (isNaN(ts)) ts = Date.now();
+  } catch { ts = Date.now(); }
+
+  return {
+    ts,
+    mgdl: parseFloat(data.ValueInMgPerDl || 0),
+    mmol: Math.round(parseFloat(data.ValueInMgPerDl || 0) / MGDL_TO_MMOL * 10) / 10,
+    trend: parseInt(data.TrendArrow || 3),
+    isHigh: !!data.isHigh,
+    isLow: !!data.isLow,
+  };
+}
+
+function readingValue(r) { return unit === "mgdl" ? r.mgdl : r.mmol; }
+function unitStr() { return unit === "mgdl" ? "mg/dL" : "mmol/L"; }
+
+// ══════════════════════════════════════════════════════════════
+// Display update
+// ══════════════════════════════════════════════════════════════
+function updateDisplay(reading, conn) {
+  const readingEl = document.getElementById("currentReading");
+  const trendEl = document.getElementById("trendArrow");
+
+  if (reading) {
+    const val = readingValue(reading);
+    const arrow = TREND_ARROWS[reading.trend] || "?";
+    readingEl.textContent = val + " " + unitStr();
+    trendEl.textContent = arrow;
+
+    const ageMs = Date.now() - reading.ts;
+    const staleMinutes = 15;
+    isStale = ageMs > staleMinutes * 60 * 1000;
+
+    if (isStale) {
+      readingEl.classList.add("stale");
+      startBlinking(val + " " + unitStr(), arrow);
+    } else {
+      readingEl.classList.remove("stale");
+      stopBlinking();
+      // Color by mmol range
+      readingEl.style.color = glucoseColor(reading.mmol);
+      // Beep check
+      checkLowBeep(reading);
+    }
+
+    document.title = `LibreLinkUp - ${val} ${unitStr()}`;
+  } else {
+    isStale = true;
+    readingEl.textContent = "No Recent Data";
+    readingEl.classList.add("stale");
+    trendEl.textContent = "";
+    startBlinking("No Recent Data", "");
+    document.title = "LibreLinkUp";
+  }
+}
+
+function glucoseColor(mmol) {
+  if (mmol < 4) return "#cc0000";
+  if (mmol <= 10) return "#333";
+  if (mmol <= 14.9) return "#cc8800";
+  return "#6b1010";
+}
+
+// ══════════════════════════════════════════════════════════════
+// Blinking for stale data
+// ══════════════════════════════════════════════════════════════
+function startBlinking(readingText, trendText) {
+  lastReadingText = readingText;
+  lastTrendText = trendText;
+  if (blinkTimer) return;
+  blinkVisible = true;
+  blinkTimer = setInterval(() => {
+    blinkVisible = !blinkVisible;
+    const readingEl = document.getElementById("currentReading");
+    const trendEl = document.getElementById("trendArrow");
+    if (blinkVisible) {
+      readingEl.textContent = lastReadingText;
+      trendEl.textContent = lastTrendText;
+    } else {
+      readingEl.textContent = "No Recent Data";
+      trendEl.textContent = "";
+    }
+  }, 800);
+}
+
+function stopBlinking() {
+  if (blinkTimer) { clearInterval(blinkTimer); blinkTimer = null; }
+  blinkVisible = true;
+}
+
+// ══════════════════════════════════════════════════════════════
+// Beep (Web Audio API)
+// ══════════════════════════════════════════════════════════════
+let audioCtx = null;
+function beep(freq = 1000, duration = 600) {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.frequency.value = freq;
+    gain.gain.value = 0.3;
+    osc.start();
+    osc.stop(audioCtx.currentTime + duration / 1000);
+  } catch {}
+}
+
+function checkLowBeep(reading) {
+  if (!beepEnabled || beepThresholdMmol <= 0) return;
+  if (reading.mmol < beepThresholdMmol) beep();
+}
+
+// ══════════════════════════════════════════════════════════════
+// Chart (Chart.js)
+// ══════════════════════════════════════════════════════════════
+function initChart() {
+  const ctx = document.getElementById("glucoseChart").getContext("2d");
+  chart = new Chart(ctx, {
+    type: "line",
+    data: {
+      datasets: [
+        {
+          label: "Glucose",
+          data: [],
+          borderColor: "#333",
+          borderWidth: 2,
+          pointRadius: 0,
+          tension: 0.3,
+          fill: false,
+        },
+        {
+          label: "Current",
+          data: [],
+          borderColor: "transparent",
+          backgroundColor: "rgba(200, 50, 50, 0.9)",
+          pointRadius: 6,
+          pointStyle: "circle",
+          showLine: false,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 300 },
+      plugins: {
+        legend: { display: false },
+        annotation: {
+          annotations: {
+            targetBand: {
+              type: "box",
+              yMin: 3.9,
+              yMax: 10.0,
+              backgroundColor: "rgba(144, 238, 144, 0.2)",
+              borderWidth: 0,
+            },
+            highLine: {
+              type: "line",
+              yMin: 10.0,
+              yMax: 10.0,
+              borderColor: "rgba(255, 165, 0, 0.6)",
+              borderWidth: 1,
+              borderDash: [6, 4],
+            },
+            lowLine: {
+              type: "line",
+              yMin: 3.9,
+              yMax: 3.9,
+              borderColor: "rgba(255, 0, 0, 0.6)",
+              borderWidth: 1,
+              borderDash: [6, 4],
+            },
+          },
+        },
+      },
+      scales: {
+        x: {
+          type: "time",
+          time: { unit: "hour", displayFormats: { hour: "ha" } },
+          ticks: { maxTicksLimit: 8, font: { size: 11 } },
+          grid: { display: false },
+        },
+        y: {
+          title: { display: true, text: "mmol/L", font: { size: 12 } },
+          ticks: { font: { size: 11 } },
+          grid: { color: "rgba(0,0,0,0.06)" },
+        },
+      },
+    },
+    plugins: [{
+      // Inline annotation plugin (lightweight — just draws the bands)
+      id: "targetBand",
+      beforeDraw(chart) {
+        const { ctx, chartArea, scales } = chart;
+        if (!chartArea || !scales.y) return;
+        const meta = chart.config.options._targetMeta;
+        if (!meta) return;
+
+        const yLow = scales.y.getPixelForValue(meta.targetLow);
+        const yHigh = scales.y.getPixelForValue(meta.targetHigh);
+
+        // Target band
+        ctx.save();
+        ctx.fillStyle = "rgba(144, 238, 144, 0.2)";
+        ctx.fillRect(chartArea.left, Math.min(yLow, yHigh), chartArea.width, Math.abs(yHigh - yLow));
+        ctx.restore();
+
+        // High line (orange dashed)
+        ctx.save();
+        ctx.setLineDash([6, 4]);
+        ctx.strokeStyle = "rgba(255, 165, 0, 0.6)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(chartArea.left, yHigh);
+        ctx.lineTo(chartArea.right, yHigh);
+        ctx.stroke();
+        ctx.restore();
+
+        // Low line (red dashed)
+        ctx.save();
+        ctx.setLineDash([6, 4]);
+        ctx.strokeStyle = "rgba(255, 0, 0, 0.6)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(chartArea.left, yLow);
+        ctx.lineTo(chartArea.right, yLow);
+        ctx.stroke();
+        ctx.restore();
+      },
+    }],
+  });
+  // Remove the built-in annotation config (we use the plugin above)
+  delete chart.config.options.plugins.annotation;
+}
+
+function updateChart(readings, current, conn) {
+  if (!chart) return;
+
+  // Determine thresholds
+  const targetLow = conn.targetLow ? (unit === "mgdl" ? conn.targetLow : conn.targetLow / MGDL_TO_MMOL) : (unit === "mgdl" ? 70 : 3.9);
+  const targetHigh = conn.targetHigh ? (unit === "mgdl" ? conn.targetHigh : conn.targetHigh / MGDL_TO_MMOL) : (unit === "mgdl" ? 180 : 10.0);
+
+  chart.config.options._targetMeta = { targetLow, targetHigh };
+
+  // Y axis label
+  chart.options.scales.y.title.text = unitStr();
+
+  // Data points
+  const points = readings.map(r => ({ x: r.ts, y: readingValue(r) }));
+  chart.data.datasets[0].data = points;
+
+  // Current dot
+  if (current) {
+    chart.data.datasets[1].data = [{ x: current.ts, y: readingValue(current) }];
+  } else if (points.length) {
+    chart.data.datasets[1].data = [points[points.length - 1]];
+  } else {
+    chart.data.datasets[1].data = [];
+  }
+
+  chart.update();
+}
+
+// ══════════════════════════════════════════════════════════════
+// Unit toggle
+// ══════════════════════════════════════════════════════════════
+function toggleUnit() {
+  unit = unit === "mmol" ? "mgdl" : "mmol";
+  savePref("unit", unit);
+  updateUnitBtn();
+  updateBeepLabel();
+  refreshData();
+}
+
+function updateUnitBtn() {
+  document.getElementById("unitBtn").textContent = unitStr();
+}
+
+// ══════════════════════════════════════════════════════════════
+// Gear menu
+// ══════════════════════════════════════════════════════════════
+function toggleGearMenu(e) {
+  e.stopPropagation();
+  document.getElementById("gearMenu").classList.toggle("open");
+}
+
+document.addEventListener("click", () => {
+  document.getElementById("gearMenu")?.classList.remove("open");
+});
+
+function toggleBeep() {
+  beepEnabled = !beepEnabled;
+  savePref("beepEnabled", beepEnabled);
+  updateBeepLabel();
+}
+
+function updateBeepLabel() {
+  const val = unit === "mgdl" ? Math.round(beepThresholdMmol * MGDL_TO_MMOL) : beepThresholdMmol;
+  document.getElementById("beepLabel").textContent = `Beep < ${val} ${unitStr()}`;
+  document.getElementById("beepCheck").textContent = beepEnabled ? "\u2611" : "\u2610";
+}
+
+function showBeepThreshold() {
+  document.getElementById("gearMenu").classList.remove("open");
+  const input = document.getElementById("beepThresholdInput");
+  const unitLabel = document.getElementById("beepThresholdUnit");
+  if (unit === "mgdl") {
+    input.value = Math.round(beepThresholdMmol * MGDL_TO_MMOL);
+    input.step = 5;
+    input.max = 400;
+    unitLabel.textContent = "mg/dL";
+  } else {
+    input.value = beepThresholdMmol;
+    input.step = 0.5;
+    input.max = 22;
+    unitLabel.textContent = "mmol/L";
+  }
+  document.getElementById("beepModal").classList.add("open");
+}
+
+function closeBeepModal() { document.getElementById("beepModal").classList.remove("open"); }
+
+function saveBeepThreshold() {
+  let val = parseFloat(document.getElementById("beepThresholdInput").value);
+  if (isNaN(val)) val = 4.0;
+  if (unit === "mgdl") val = Math.round(val / MGDL_TO_MMOL * 10) / 10;
+  beepThresholdMmol = val;
+  savePref("beepThresholdMmol", val);
+  updateBeepLabel();
+  closeBeepModal();
+}
+
+// ══════════════════════════════════════════════════════════════
+// Logbook
+// ══════════════════════════════════════════════════════════════
+async function showLogbook() {
+  if (!currentConnection) return;
+  const pid = currentConnection.patientId;
+
+  try {
+    const body = await apiCall("GET", `/llu/connections/${pid}/logbook`);
+    if (body.status !== 0) throw new Error("Failed to fetch logbook");
+
+    const entries = (body.data || []).map(parseReading).sort((a, b) => b.ts - a.ts);
+    const tbody = document.getElementById("logbookBody");
+    tbody.innerHTML = "";
+
+    entries.forEach(e => {
+      const tr = document.createElement("tr");
+      const d = new Date(e.ts);
+      tr.innerHTML = `<td>${d.toLocaleDateString()} ${d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</td>` +
+                     `<td style="color:${glucoseColor(e.mmol)};font-weight:bold">${readingValue(e)} ${unitStr()}</td>`;
+      tbody.appendChild(tr);
+    });
+
+    document.getElementById("logbookModal").classList.add("open");
+  } catch (e) {
+    alert("Failed to load logbook: " + e.message);
+  }
+}
+
+function closeLogbook() { document.getElementById("logbookModal").classList.remove("open"); }
+
+// ══════════════════════════════════════════════════════════════
+// Logout
+// ══════════════════════════════════════════════════════════════
+function doLogout() {
+  document.getElementById("gearMenu").classList.remove("open");
+  authToken = null;
+  accountId = null;
+  connections = [];
+  currentConnection = null;
+  graphData = null;
+  recentReadings = [];
+  if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
+  stopBlinking();
+
+  // Clear saved credentials
+  const cfg = loadConfig();
+  cfg.remember = false;
+  delete cfg.encEmail;
+  delete cfg.encPassword;
+  saveConfig(cfg);
+
+  document.getElementById("passwordInput").value = "";
+  document.getElementById("rememberCheck").checked = false;
+  document.getElementById("loginStatus").textContent = "";
+  document.getElementById("appScreen").style.display = "none";
+  document.getElementById("loginScreen").style.display = "flex";
+  document.title = "LibreLinkUp";
+}
+
+// ══════════════════════════════════════════════════════════════
+// Auto-login on page load
+// ══════════════════════════════════════════════════════════════
+window.addEventListener("DOMContentLoaded", async () => {
+  await loadSavedState();
+
+  // Auto-login if we have saved credentials
+  const cfg = loadConfig();
+  if (cfg.remember && cfg.encEmail && cfg.encPassword && cfg.workerUrl) {
+    const email = document.getElementById("emailInput").value;
+    const password = document.getElementById("passwordInput").value;
+    if (email && password) {
+      doLogin();
+    }
+  }
+});
+</script>
+</body>
+</html>
