@@ -18,6 +18,9 @@ Python 3.13 · PySide6 (Qt) · pyqtgraph · requests · cryptography (Fernet) ·
 - `resources/style.qss` — Qt stylesheet (red/white theme)
 - `config.json` — User-editable defaults (lives next to exe or main.py)
 - `VERSION` — Version string (1.0.9)
+- `docs/index.html` — Web version: single-page app (hosted on GitHub Pages)
+- `docs/worker.js` — Cloudflare Worker CORS proxy (deployed separately)
+- `docs/README.md` — Web version setup guide
 
 ## API
 Base: `https://api-{region}.libreview.io` (regions: us, ca, eu, de, fr, au, jp)
@@ -42,6 +45,13 @@ Auth headers: `Authorization: Bearer {token}` + `Account-Id: sha256(user_id)`
 - Prevent sleep: blocks screensaver and display sleep via `SetThreadExecutionState`; controlled by `prevent_sleep` config key (default `true`)
 - Logout clears cached credentials so next launch shows login screen
 - Version in window titles via `app_title(config, suffix)` — hidden `hide_version` config key suppresses it
+
+## Web Version
+- Hosted on GitHub Pages at `https://jakeiiiii.github.io/LibreLinkUp-desktop/`
+- CORS proxy via Cloudflare Worker at `https://llu-proxy.jake-c67.workers.dev`
+- Single-page app in `docs/index.html` — Chart.js chart, Web Audio API beep, AES-GCM encrypted credentials in localStorage
+- Worker code in `docs/worker.js` — whitelists LibreLinkUp API hosts, forwards requests, adds CORS headers
+- No backend needed; worker runs on Cloudflare free tier (100k requests/day)
 
 ## Build
 ```

@@ -27,18 +27,22 @@ A Windows desktop app that replicates Abbott's [LibreLinkUp](https://www.libreli
 
 ## Quick Start
 
-### Option 1: Download pre-built
+### Option 1: Web version (any device)
+
+Open **[jakeiiiii.github.io/LibreLinkUp-desktop](https://jakeiiiii.github.io/LibreLinkUp-desktop/)** in any browser. Requires a Cloudflare Worker proxy for CORS — see the [web setup guide](docs/README.md) for details.
+
+### Option 2: Download pre-built (Windows)
 
 Download `LibreLinkUp.zip` from the [`bin`](bin/) folder, extract it anywhere, and run `LibreLinkUp.exe`. No Python installation required.
 
-### Option 2: Run from source
+### Option 3: Run from source (Windows)
 
 ```bash
 pip install -r requirements.txt
 python main.py
 ```
 
-### Option 3: Build a standalone .exe
+### Option 4: Build a standalone .exe
 
 ```bash
 pip install -r requirements.txt
@@ -94,9 +98,16 @@ These settings are not exposed in the UI. Add them manually to `config.json` if 
 
 ## Requirements
 
+**Desktop app:**
 - Windows 10/11
-- A [LibreLinkUp](https://www.librelinkup.com/) account with an active connection to a FreeStyle Libre sensor
 - Python 3.10+ (only if running from source)
+
+**Web version:**
+- Any modern browser (Chrome, Firefox, Edge, Safari)
+- A free [Cloudflare](https://dash.cloudflare.com/sign-up) account for the CORS proxy worker
+
+**Both:**
+- A [LibreLinkUp](https://www.librelinkup.com/) account with an active connection to a FreeStyle Libre sensor
 
 ## How It Works
 
