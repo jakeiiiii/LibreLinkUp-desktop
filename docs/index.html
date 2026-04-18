@@ -93,9 +93,9 @@
     min-height: 100vh;
     padding:
       max(env(safe-area-inset-top, 0px), 2vh)
-      max(env(safe-area-inset-right, 0px), 3vw)
+      max(env(safe-area-inset-right, 0px), 6vw)
       max(env(safe-area-inset-bottom, 0px), 2vh)
-      max(env(safe-area-inset-left, 0px), 3vw);
+      max(env(safe-area-inset-left, 0px), 6vw);
     box-sizing: border-box;
   }
   .header-bar {
@@ -137,14 +137,15 @@
   .info-bar {
     background: var(--light-bg);
     border-bottom: 1px solid var(--border);
-    padding: 12px 16px;
+    padding: 16px 20px;
     display: flex;
     align-items: baseline;
-    gap: 6px;
-    min-height: 50px;
+    gap: 12px;
+    min-height: 90px;
   }
-  #currentReading { font-size: 28px; font-weight: bold; }
-  #trendArrow { font-size: 30px; }
+  #currentReading { font-size: 56px; font-weight: bold; }
+  #trendArrow { font-size: 60px; }
+  #readingTime { font-size: 24px; color: var(--muted); margin-left: 8px; }
   .stale { color: var(--muted) !important; }
 
   .chart-container {
@@ -337,6 +338,7 @@
   <div class="info-bar">
     <span id="currentReading">---</span>
     <span id="trendArrow"></span>
+    <span id="readingTime"></span>
   </div>
 
   <div class="chart-container">
@@ -717,12 +719,14 @@ function unitStr() { return unit === "mgdl" ? "mg/dL" : "mmol/L"; }
 function updateDisplay(reading, conn) {
   const readingEl = document.getElementById("currentReading");
   const trendEl = document.getElementById("trendArrow");
+  const timeEl = document.getElementById("readingTime");
 
   if (reading) {
     const val = readingValue(reading);
     const arrow = TREND_ARROWS[reading.trend] || "?";
     readingEl.textContent = val + " " + unitStr();
     trendEl.textContent = arrow;
+    timeEl.textContent = new Date(reading.ts).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 
     const ageMs = Date.now() - reading.ts;
     const staleMinutes = 15;
@@ -746,6 +750,7 @@ function updateDisplay(reading, conn) {
     readingEl.textContent = "No Recent Data";
     readingEl.classList.add("stale");
     trendEl.textContent = "";
+    timeEl.textContent = "";
     startBlinking("No Recent Data", "");
     document.title = "LibreLinkUp";
   }
