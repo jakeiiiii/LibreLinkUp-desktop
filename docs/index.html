@@ -87,7 +87,17 @@
   .login-status { text-align: center; color: var(--red); font-size: 13px; margin-top: 12px; min-height: 20px; }
 
   /* ── Main App ── */
-  #appScreen { display: none; min-height: 100vh; }
+  /* Horizontal/vertical padding here keeps content inside TV overscan area */
+  #appScreen {
+    display: none;
+    min-height: 100vh;
+    padding:
+      max(env(safe-area-inset-top, 0px), 2vh)
+      max(env(safe-area-inset-right, 0px), 3vw)
+      max(env(safe-area-inset-bottom, 0px), 2vh)
+      max(env(safe-area-inset-left, 0px), 3vw);
+    box-sizing: border-box;
+  }
   .header-bar {
     background: var(--red);
     color: white;
@@ -307,7 +317,7 @@
     </div>
 
     <div class="remember-row">
-      <input type="checkbox" id="rememberCheck">
+      <input type="checkbox" id="rememberCheck" checked>
       <label for="rememberCheck">Remember credentials</label>
     </div>
 
@@ -1071,7 +1081,7 @@ function doLogout() {
   saveConfig(cfg);
 
   document.getElementById("passwordInput").value = "";
-  document.getElementById("rememberCheck").checked = false;
+  document.getElementById("rememberCheck").checked = true;
   document.getElementById("loginStatus").textContent = "";
   document.getElementById("appScreen").style.display = "none";
   document.getElementById("loginScreen").style.display = "flex";
@@ -1079,20 +1089,10 @@ function doLogout() {
 }
 
 // ══════════════════════════════════════════════════════════════
-// Auto-login on page load
+// Page load — pre-fill saved credentials but wait for user to click Login
 // ══════════════════════════════════════════════════════════════
 window.addEventListener("DOMContentLoaded", async () => {
   await loadSavedState();
-
-  // Auto-login if we have saved credentials
-  const cfg = loadConfig();
-  if (cfg.remember && cfg.encEmail && cfg.encPassword && cfg.workerUrl) {
-    const email = document.getElementById("emailInput").value;
-    const password = document.getElementById("passwordInput").value;
-    if (email && password) {
-      doLogin();
-    }
-  }
 });
 </script>
 </body>

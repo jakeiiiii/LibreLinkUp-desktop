@@ -47,8 +47,9 @@ Your app will be live at: `https://yourusername.github.io/LibreLinkUp-desktop/`
 - Low glucose beep alert (Web Audio API)
 - Stale data blinking (same 800ms alternation as desktop)
 - Encrypted credential storage in localStorage (AES-GCM via Web Crypto API)
-- Auto-login on page load when credentials are saved
+- "Remember credentials" pre-fills the login form on next visit (defaults to on); user clicks Login to sign in
 - Auto-refresh every 60 seconds
+- TV-safe layout: viewport-based padding keeps content inside the overscan area on TV browsers
 
 ## Architecture
 

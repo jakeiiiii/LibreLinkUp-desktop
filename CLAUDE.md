@@ -52,6 +52,8 @@ Auth headers: `Authorization: Bearer {token}` + `Account-Id: sha256(user_id)`
 - Single-page app in `docs/index.html` — Chart.js chart, Web Audio API beep, AES-GCM encrypted credentials in localStorage
 - Worker code in `docs/worker.js` — whitelists LibreLinkUp API hosts, forwards requests, adds CORS headers
 - No backend needed; worker runs on Cloudflare free tier (100k requests/day)
+- "Remember credentials" defaults to on and pre-fills the form on next visit; no auto-login — user must click Login (TV browsers were triggering login on checkbox toggle)
+- TV-safe padding on `#appScreen` via `max(env(safe-area-inset-*), 3vw/2vh)` keeps content inside the overscan area
 
 ## Build
 ```
