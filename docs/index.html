@@ -6,6 +6,17 @@
 <title>LibreLinkUp</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3"></script>
+<script>
+  // Synchronous: mark <html data-auto-login> if cached creds exist, so the
+  // login screen never paints. CSS hides it; JS will auto-login on DOMContentLoaded.
+  // If auto-login fails, JS clears the attribute and the login screen reappears.
+  try {
+    var _cfg = JSON.parse(localStorage.getItem("llu_config") || "{}");
+    if (_cfg.remember && _cfg.encEmail && _cfg.encPassword && _cfg.workerUrl) {
+      document.documentElement.dataset.autoLogin = "1";
+    }
+  } catch (e) {}
+</script>
 <style>
   :root {
     --red: #c0392b;
@@ -37,6 +48,8 @@
     min-height: 100vh;
     background: var(--light-bg);
   }
+  /* Cached credentials → skip login screen (set by inline script in <head>) */
+  html[data-auto-login] #loginScreen { display: none; }
   .login-card {
     background: white;
     border-radius: 8px;
@@ -538,8 +551,8 @@ async function doLogin() {
   const remember = document.getElementById("rememberCheck").checked;
   const status = document.getElementById("loginStatus");
 
-  if (!workerInput) { status.textContent = "Please enter your Worker URL."; return; }
-  if (!email || !password) { status.textContent = "Please enter email and password."; return; }
+  if (!workerInput) { status.textContent = "Please enter your Worker URL."; abortAutoLogin(); return; }
+  if (!email || !password) { status.textContent = "Please enter email and password."; abortAutoLogin(); return; }
 
   workerUrl = workerInput;
   regionHost = region;
@@ -583,9 +596,15 @@ async function doLogin() {
     showApp();
   } catch (e) {
     status.textContent = e.message;
+    abortAutoLogin();
   } finally {
     document.getElementById("loginBtn").disabled = false;
   }
+}
+
+// If an auto-login attempt fails, drop the data attribute so the login screen reappears.
+function abortAutoLogin() {
+  delete document.documentElement.dataset.autoLogin;
 }
 
 // Enter key triggers login
@@ -1094,10 +1113,15 @@ function doLogout() {
 }
 
 // ══════════════════════════════════════════════════════════════
-// Page load — pre-fill saved credentials but wait for user to click Login
+// Page load — pre-fill saved credentials. Auto-login only when the
+// inline <head> script has marked html[data-auto-login] (cached creds);
+// otherwise wait for the user to click Login.
 // ══════════════════════════════════════════════════════════════
 window.addEventListener("DOMContentLoaded", async () => {
   await loadSavedState();
+  if (document.documentElement.dataset.autoLogin) {
+    doLogin();
+  }
 });
 </script>
 </body>
