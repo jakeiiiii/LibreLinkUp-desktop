@@ -53,6 +53,8 @@ Auth headers: `Authorization: Bearer {token}` + `Account-Id: sha256(user_id)`
 - Worker code in `docs/worker.js` — whitelists LibreLinkUp API hosts, forwards requests, adds CORS headers
 - No backend needed; worker runs on Cloudflare free tier (100k requests/day)
 - "Remember credentials" defaults to on. When cached creds are present, an inline `<head>` script sets `html[data-auto-login]` synchronously so the login screen never paints; `DOMContentLoaded` then calls `doLogin()`. On any failure (`abortAutoLogin()`) the attribute is removed and the login screen reappears. Without cached creds, the form pre-fills but the user must click Login (avoids TV-browser checkbox-toggle triggering login)
+- Stale data on web does NOT blink (unlike desktop). Last value stays visible with `.stale` class (muted color); steady display preferred for TV viewing
+- `#readingTime` shows the current wall-clock time (not the reading timestamp), updated every 60s via `clockTimer`. The bottom bar's "Updated …" label still shows the last successful refresh time
 - TV-safe padding on `#appScreen` via `max(env(safe-area-inset-*), 3vw/2vh)` keeps content inside the overscan area
 
 ## Build

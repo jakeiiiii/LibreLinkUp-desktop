@@ -457,11 +457,8 @@ let graphData = null;
 let recentReadings = [];
 let unit = "mmol";
 let refreshTimer = null;
-let blinkTimer = null;
-let blinkVisible = true;
+let clockTimer = null;
 let isStale = false;
-let lastReadingText = "";
-let lastTrendText = "";
 let beepEnabled = true;
 let beepThresholdMmol = 4.0;
 let chart = null;
@@ -621,6 +618,14 @@ function showApp() {
   initChart();
   loadConnections();
   refreshTimer = setInterval(refreshData, 60000);
+  updateClock();
+  if (clockTimer) clearInterval(clockTimer);
+  clockTimer = setInterval(updateClock, 60000);
+}
+
+function updateClock() {
+  document.getElementById("readingTime").textContent =
+    new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 }
 
 async function loadConnections() {
@@ -738,28 +743,24 @@ function unitStr() { return unit === "mgdl" ? "mg/dL" : "mmol/L"; }
 function updateDisplay(reading, conn) {
   const readingEl = document.getElementById("currentReading");
   const trendEl = document.getElementById("trendArrow");
-  const timeEl = document.getElementById("readingTime");
 
   if (reading) {
     const val = readingValue(reading);
     const arrow = TREND_ARROWS[reading.trend] || "?";
     readingEl.textContent = val + " " + unitStr();
     trendEl.textContent = arrow;
-    timeEl.textContent = new Date(reading.ts).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 
     const ageMs = Date.now() - reading.ts;
     const staleMinutes = 15;
     isStale = ageMs > staleMinutes * 60 * 1000;
 
     if (isStale) {
+      // Static stale state — show the last value muted, no blinking
       readingEl.classList.add("stale");
-      startBlinking(val + " " + unitStr(), arrow);
+      readingEl.style.color = "";
     } else {
       readingEl.classList.remove("stale");
-      stopBlinking();
-      // Color by mmol range
       readingEl.style.color = glucoseColor(reading.mmol);
-      // Beep check
       checkLowBeep(reading);
     }
 
@@ -769,10 +770,10 @@ function updateDisplay(reading, conn) {
     readingEl.textContent = "No Recent Data";
     readingEl.classList.add("stale");
     trendEl.textContent = "";
-    timeEl.textContent = "";
-    startBlinking("No Recent Data", "");
     document.title = "LibreLinkUp";
   }
+
+  updateClock();
 }
 
 function glucoseColor(mmol) {
@@ -780,33 +781,6 @@ function glucoseColor(mmol) {
   if (mmol <= 10) return "#333";
   if (mmol <= 14.9) return "#cc8800";
   return "#6b1010";
-}
-
-// ══════════════════════════════════════════════════════════════
-// Blinking for stale data
-// ══════════════════════════════════════════════════════════════
-function startBlinking(readingText, trendText) {
-  lastReadingText = readingText;
-  lastTrendText = trendText;
-  if (blinkTimer) return;
-  blinkVisible = true;
-  blinkTimer = setInterval(() => {
-    blinkVisible = !blinkVisible;
-    const readingEl = document.getElementById("currentReading");
-    const trendEl = document.getElementById("trendArrow");
-    if (blinkVisible) {
-      readingEl.textContent = lastReadingText;
-      trendEl.textContent = lastTrendText;
-    } else {
-      readingEl.textContent = "No Recent Data";
-      trendEl.textContent = "";
-    }
-  }, 800);
-}
-
-function stopBlinking() {
-  if (blinkTimer) { clearInterval(blinkTimer); blinkTimer = null; }
-  blinkVisible = true;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1095,7 +1069,7 @@ function doLogout() {
   graphData = null;
   recentReadings = [];
   if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
-  stopBlinking();
+  if (clockTimer) { clearInterval(clockTimer); clockTimer = null; }
 
   // Clear saved credentials
   const cfg = loadConfig();
