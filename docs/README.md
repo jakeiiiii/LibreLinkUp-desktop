@@ -52,6 +52,7 @@ Your app will be live at: `https://yourusername.github.io/LibreLinkUp-desktop/`
 - TV-safe layout: viewport-based padding keeps content inside the overscan area on TV browsers
 - Responsive info-bar: glucose value, trend arrow, and clock scale via `clamp()` so everything fits on phones and TVs alike
 - Dark/light theme follows the OS (`prefers-color-scheme`); live switches re-paint the chart without a reload
+- Subtle no-signal indicator: small muted `● No signal` appears in the bottom bar when a refresh fails, while the last successful "Updated …" time stays visible
 
 ## Architecture
 

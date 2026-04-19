@@ -206,6 +206,13 @@
     gap: 12px;
   }
   #refreshLabel { font-size: 12px; color: #aaa; }
+  #signalIndicator {
+    font-size: 12px;
+    color: var(--muted);
+    opacity: 0.75;
+    margin-right: 8px;
+  }
+  #signalIndicator[hidden] { display: none; }
   .log-btn {
     background: var(--red);
     color: white;
@@ -391,6 +398,7 @@
   </div>
 
   <div class="bottom-bar">
+    <span id="signalIndicator" hidden title="No signal">&#9679; No signal</span>
     <span id="refreshLabel"></span>
     <button class="log-btn" onclick="showLogbook()">Log</button>
     <div style="position:relative;">
@@ -756,13 +764,15 @@ async function refreshData() {
     // Update chart
     updateChart(allReadings, reading, conn);
 
-    // Timestamp
+    // Timestamp — success clears the no-signal indicator and updates the label
     const now = new Date();
     document.getElementById("refreshLabel").textContent =
       "Updated " + now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    document.getElementById("signalIndicator").hidden = true;
 
   } catch (e) {
-    document.getElementById("refreshLabel").textContent = "Error: " + e.message;
+    // Subtle: show the indicator, leave the last "Updated ..." label in place
+    document.getElementById("signalIndicator").hidden = false;
   }
 }
 

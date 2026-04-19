@@ -57,6 +57,7 @@ Auth headers: `Authorization: Bearer {token}` + `Account-Id: sha256(user_id)`
 - `#readingTime` shows the current wall-clock time (not the reading timestamp), updated every 60s via `clockTimer`. The bottom bar's "Updated …" label still shows the last successful refresh time
 - Info-bar glucose number, trend arrow, and time use `clamp(…, vw, …)` font sizing so the row fits on both phones and TVs; `white-space: nowrap` keeps each span on one line
 - Dark/light theme respects `prefers-color-scheme`. All surface/text/border colors are CSS variables (`--bg`, `--text`, `--card-bg`, `--hover-bg`, `--input-border`, `--chart-line`, `--chart-grid`, `--glucose-normal`, `--glucose-high-severe`, `--shadow`) with a dark-mode `@media` block overriding them. JS reads vars via `themeVar()` for Chart.js line/grid/tick colors and for `glucoseColor()`. `applyTheme()` hooks `matchMedia("(prefers-color-scheme: dark)").change` so live OS theme toggles re-paint the chart without reload
+- No-signal indicator: `#signalIndicator` in the bottom bar (`● No signal`, 12px muted, opacity 0.75) is hidden on success and shown on fetch failure; the last successful "Updated …" label is preserved so the user still sees when the data was last good
 - TV-safe padding on `#appScreen` via `max(env(safe-area-inset-*), 3vw/2vh)` keeps content inside the overscan area
 
 ## Build
