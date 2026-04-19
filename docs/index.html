@@ -499,6 +499,10 @@ let unit = "mmol";
 let refreshTimer = null;
 let clockTimer = null;
 let isStale = false;
+let blinkTimer = null;
+let blinkVisible = true;
+let lastReadingText = "";
+let lastTrendText = "";
 let beepEnabled = true;
 let beepThresholdMmol = 4.0;
 let chart = null;
@@ -816,12 +820,13 @@ function updateDisplay(reading, conn) {
     isStale = ageMs > staleMinutes * 60 * 1000;
 
     if (isStale) {
-      // Static stale state — show the last value muted, no blinking
       readingEl.classList.add("stale");
       readingEl.style.color = "";
+      startBlinking(val + " " + unitStr(), arrow);
     } else {
       readingEl.classList.remove("stale");
       readingEl.style.color = glucoseColor(reading.mmol);
+      stopBlinking();
       checkLowBeep(reading);
     }
 
@@ -831,10 +836,35 @@ function updateDisplay(reading, conn) {
     readingEl.textContent = "No Recent Data";
     readingEl.classList.add("stale");
     trendEl.textContent = "";
+    startBlinking("No Recent Data", "");
     document.title = "LibreLinkUp";
   }
 
   updateClock();
+}
+
+function startBlinking(readingText, trendText) {
+  lastReadingText = readingText;
+  lastTrendText = trendText;
+  if (blinkTimer) return;
+  blinkVisible = true;
+  blinkTimer = setInterval(() => {
+    blinkVisible = !blinkVisible;
+    const readingEl = document.getElementById("currentReading");
+    const trendEl = document.getElementById("trendArrow");
+    if (blinkVisible) {
+      readingEl.textContent = lastReadingText;
+      trendEl.textContent = lastTrendText;
+    } else {
+      readingEl.textContent = "No Recent Data";
+      trendEl.textContent = "";
+    }
+  }, 800);
+}
+
+function stopBlinking() {
+  if (blinkTimer) { clearInterval(blinkTimer); blinkTimer = null; }
+  blinkVisible = true;
 }
 
 function themeVar(name) {
@@ -1135,6 +1165,7 @@ function doLogout() {
   recentReadings = [];
   if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
   if (clockTimer) { clearInterval(clockTimer); clockTimer = null; }
+  stopBlinking();
 
   // Clear saved credentials
   const cfg = loadConfig();

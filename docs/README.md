@@ -45,7 +45,7 @@ Your app will be live at: `https://yourusername.github.io/LibreLinkUp-desktop/`
 - Logbook view
 - Unit toggle (mmol/L ↔ mg/dL)
 - Low glucose beep alert (Web Audio API)
-- Stale data: last value stays visible muted (no blinking) so the TV display stays steady
+- Stale data: alternates between the last value and "No Recent Data" every 800ms (matches desktop)
 - Encrypted credential storage in localStorage (AES-GCM via Web Crypto API)
 - "Remember credentials" defaults to on. When cached, the login screen is skipped entirely on next visit and the app loads directly. Without cached credentials, the form is shown and the user clicks Login.
 - Auto-refresh every 60 seconds
