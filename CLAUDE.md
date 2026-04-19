@@ -55,6 +55,7 @@ Auth headers: `Authorization: Bearer {token}` + `Account-Id: sha256(user_id)`
 - "Remember credentials" defaults to on. When cached creds are present, an inline `<head>` script sets `html[data-auto-login]` synchronously so the login screen never paints; `DOMContentLoaded` then calls `doLogin()`. On any failure (`abortAutoLogin()`) the attribute is removed and the login screen reappears. Without cached creds, the form pre-fills but the user must click Login (avoids TV-browser checkbox-toggle triggering login)
 - Stale data on web does NOT blink (unlike desktop). Last value stays visible with `.stale` class (muted color); steady display preferred for TV viewing
 - `#readingTime` shows the current wall-clock time (not the reading timestamp), updated every 60s via `clockTimer`. The bottom bar's "Updated …" label still shows the last successful refresh time
+- Info-bar glucose number, trend arrow, and time use `clamp(…, vw, …)` font sizing so the row fits on both phones and TVs; `white-space: nowrap` keeps each span on one line
 - TV-safe padding on `#appScreen` via `max(env(safe-area-inset-*), 3vw/2vh)` keeps content inside the overscan area
 
 ## Build

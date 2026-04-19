@@ -50,6 +50,7 @@ Your app will be live at: `https://yourusername.github.io/LibreLinkUp-desktop/`
 - "Remember credentials" defaults to on. When cached, the login screen is skipped entirely on next visit and the app loads directly. Without cached credentials, the form is shown and the user clicks Login.
 - Auto-refresh every 60 seconds
 - TV-safe layout: viewport-based padding keeps content inside the overscan area on TV browsers
+- Responsive info-bar: glucose value, trend arrow, and clock scale via `clamp()` so everything fits on phones and TVs alike
 
 ## Architecture
 

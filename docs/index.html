@@ -153,12 +153,13 @@
     padding: 16px 20px;
     display: flex;
     align-items: baseline;
-    gap: 12px;
-    min-height: 90px;
+    gap: clamp(6px, 1.5vw, 12px);
+    min-height: clamp(56px, 12vw, 90px);
   }
-  #currentReading { font-size: 56px; font-weight: bold; }
-  #trendArrow { font-size: 60px; }
-  #readingTime { font-size: 56px; font-weight: bold; margin-left: auto; }
+  /* Fluid sizing: min for phones, 5-5.5vw for scaling, cap for TVs */
+  #currentReading { font-size: clamp(18px, 5vw, 56px); font-weight: bold; white-space: nowrap; }
+  #trendArrow { font-size: clamp(20px, 5.5vw, 60px); white-space: nowrap; }
+  #readingTime { font-size: clamp(18px, 5vw, 56px); font-weight: bold; margin-left: auto; white-space: nowrap; }
   .stale { color: var(--muted) !important; }
 
   .chart-container {
