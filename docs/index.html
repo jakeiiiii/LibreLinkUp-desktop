@@ -30,6 +30,31 @@
     --muted: #888;
     --border: #e0e0e0;
     --light-bg: #f8f8f8;
+    --card-bg: #ffffff;
+    --hover-bg: #f0f0f0;
+    --input-border: #ccc;
+    --chart-line: #333;
+    --chart-grid: rgba(0,0,0,0.06);
+    --glucose-normal: #333;
+    --glucose-high-severe: #6b1010;
+    --shadow: rgba(0,0,0,0.1);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121212;
+      --text: #e8e8e8;
+      --muted: #999;
+      --border: #2a2a2a;
+      --light-bg: #1a1a1a;
+      --card-bg: #1e1e1e;
+      --hover-bg: #2a2a2a;
+      --input-border: #444;
+      --chart-line: #e8e8e8;
+      --chart-grid: rgba(255,255,255,0.08);
+      --glucose-normal: #e8e8e8;
+      --glucose-high-severe: #ff6b6b;
+      --shadow: rgba(0,0,0,0.5);
+    }
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -51,12 +76,12 @@
   /* Cached credentials → skip login screen (set by inline script in <head>) */
   html[data-auto-login] #loginScreen { display: none; }
   .login-card {
-    background: white;
+    background: var(--card-bg);
     border-radius: 8px;
     padding: 32px;
     width: 380px;
     max-width: 95vw;
-    box-shadow: 0 2px 16px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 16px var(--shadow);
   }
   .login-card h1 {
     text-align: center;
@@ -72,11 +97,13 @@
   .form-group input[type="text"] {
     width: 100%;
     padding: 10px 12px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--input-border);
     border-radius: 4px;
     font-size: 14px;
     outline: none;
     transition: border-color 0.2s;
+    background: var(--card-bg);
+    color: var(--text);
   }
   .form-group input:focus,
   .form-group select:focus { border-color: var(--red); }
@@ -209,10 +236,10 @@
     position: absolute;
     bottom: 100%;
     right: 0;
-    background: white;
-    border: 1px solid #ccc;
+    background: var(--card-bg);
+    border: 1px solid var(--input-border);
     border-radius: 4px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    box-shadow: 0 2px 8px var(--shadow);
     min-width: 200px;
     z-index: 100;
     margin-bottom: 4px;
@@ -226,7 +253,7 @@
     align-items: center;
     gap: 8px;
   }
-  .gear-menu-item:hover { background: #f0f0f0; color: var(--red); }
+  .gear-menu-item:hover { background: var(--hover-bg); color: var(--red); }
   .gear-menu-sep { height: 1px; background: var(--border); margin: 4px 8px; }
 
   /* ── Logbook modal ── */
@@ -241,18 +268,18 @@
   }
   .modal-overlay.open { display: flex; }
   .modal {
-    background: white;
+    background: var(--card-bg);
     border-radius: 8px;
     padding: 24px;
     max-width: 500px;
     width: 95vw;
     max-height: 80vh;
     overflow-y: auto;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 24px var(--shadow);
   }
   .modal h2 { margin-bottom: 16px; color: var(--red); }
   .modal table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  .modal th { background: #f0f0f0; padding: 8px; border-bottom: 1px solid #ccc; text-align: left; font-weight: bold; }
+  .modal th { background: var(--hover-bg); padding: 8px; border-bottom: 1px solid var(--input-border); text-align: left; font-weight: bold; }
   .modal td { padding: 6px 8px; border-bottom: 1px solid var(--border); }
   .modal-close { float: right; background: none; border: none; font-size: 20px; cursor: pointer; color: var(--muted); }
   .modal-close:hover { color: var(--red); }
@@ -263,19 +290,23 @@
   .beep-modal input[type="number"] {
     width: 100px;
     padding: 6px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--input-border);
     border-radius: 4px;
     font-size: 14px;
     margin: 12px 8px;
     text-align: center;
+    background: var(--card-bg);
+    color: var(--text);
   }
   .beep-modal .btn-row { margin-top: 16px; display: flex; justify-content: center; gap: 12px; }
   .beep-modal button {
     padding: 8px 20px;
     border-radius: 4px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--input-border);
     font-size: 13px;
     cursor: pointer;
+    background: var(--card-bg);
+    color: var(--text);
   }
   .beep-modal .btn-ok { background: var(--red); color: white; border: none; }
 
@@ -622,6 +653,25 @@ function showApp() {
   updateClock();
   if (clockTimer) clearInterval(clockTimer);
   clockTimer = setInterval(updateClock, 60000);
+
+  // React to live OS theme changes — rebuild the chart colors and refresh
+  if (window.matchMedia) {
+    const mql = window.matchMedia("(prefers-color-scheme: dark)");
+    if (mql.addEventListener) mql.addEventListener("change", applyTheme);
+  }
+}
+
+function applyTheme() {
+  if (!chart) return;
+  chart.data.datasets[0].borderColor = themeVar("--chart-line") || "#333";
+  const textColor = themeVar("--text") || "#333";
+  chart.options.scales.x.ticks.color = textColor;
+  chart.options.scales.y.ticks.color = textColor;
+  chart.options.scales.y.title.color = textColor;
+  chart.options.scales.y.grid.color = themeVar("--chart-grid") || "rgba(0,0,0,0.06)";
+  chart.update();
+  // Also refresh the current reading color band
+  refreshData();
 }
 
 function updateClock() {
@@ -777,11 +827,15 @@ function updateDisplay(reading, conn) {
   updateClock();
 }
 
+function themeVar(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
 function glucoseColor(mmol) {
   if (mmol < 4) return "#cc0000";
-  if (mmol <= 10) return "#333";
+  if (mmol <= 10) return themeVar("--glucose-normal") || "#333";
   if (mmol <= 14.9) return "#cc8800";
-  return "#6b1010";
+  return themeVar("--glucose-high-severe") || "#6b1010";
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -819,7 +873,7 @@ function initChart() {
         {
           label: "Glucose",
           data: [],
-          borderColor: "#333",
+          borderColor: themeVar("--chart-line") || "#333",
           borderWidth: 2,
           pointRadius: 0,
           tension: 0.3,
@@ -874,13 +928,13 @@ function initChart() {
         x: {
           type: "time",
           time: { unit: "hour", displayFormats: { hour: "ha" } },
-          ticks: { maxTicksLimit: 8, font: { size: 11 } },
+          ticks: { maxTicksLimit: 8, font: { size: 11 }, color: themeVar("--text") || "#333" },
           grid: { display: false },
         },
         y: {
-          title: { display: true, text: "mmol/L", font: { size: 12 } },
-          ticks: { font: { size: 11 } },
-          grid: { color: "rgba(0,0,0,0.06)" },
+          title: { display: true, text: "mmol/L", font: { size: 12 }, color: themeVar("--text") || "#333" },
+          ticks: { font: { size: 11 }, color: themeVar("--text") || "#333" },
+          grid: { color: themeVar("--chart-grid") || "rgba(0,0,0,0.06)" },
         },
       },
     },

@@ -51,6 +51,7 @@ Your app will be live at: `https://yourusername.github.io/LibreLinkUp-desktop/`
 - Auto-refresh every 60 seconds
 - TV-safe layout: viewport-based padding keeps content inside the overscan area on TV browsers
 - Responsive info-bar: glucose value, trend arrow, and clock scale via `clamp()` so everything fits on phones and TVs alike
+- Dark/light theme follows the OS (`prefers-color-scheme`); live switches re-paint the chart without a reload
 
 ## Architecture
 
