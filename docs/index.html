@@ -179,9 +179,11 @@
     border-bottom: 1px solid var(--border);
     padding: 16px 20px;
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: clamp(6px, 1.5vw, 12px);
-    min-height: clamp(56px, 12vw, 90px);
+    /* Fixed height so the row never resizes with content (e.g. "No Recent Data" hides the arrow) */
+    height: clamp(88px, calc(6.6vw + 32px), 104px);
+    box-sizing: border-box;
   }
   /* Fluid sizing: min for phones, 5-5.5vw for scaling, cap for TVs */
   #currentReading { font-size: clamp(18px, 5vw, 56px); font-weight: bold; white-space: nowrap; }
