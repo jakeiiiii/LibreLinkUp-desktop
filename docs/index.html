@@ -186,6 +186,8 @@
   /* Fluid sizing: min for phones, 5-5.5vw for scaling, cap for TVs */
   #currentReading { font-size: clamp(18px, 5vw, 56px); font-weight: bold; white-space: nowrap; }
   #trendArrow { font-size: clamp(20px, 5.5vw, 60px); white-space: nowrap; }
+  /* Reserve height when arrow is hidden (e.g. "No Recent Data") so the row doesn't collapse */
+  #trendArrow:empty::before { content: "\00a0"; }
   #readingTime { font-size: clamp(18px, 5vw, 56px); font-weight: bold; margin-left: auto; white-space: nowrap; }
   .stale { color: var(--muted) !important; }
 
