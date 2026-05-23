@@ -14,7 +14,7 @@ from PySide6.QtWidgets import (
 )
 
 from api.client import LibreLinkUpClient, LibreLinkUpError
-from api.models import Connection, GraphData
+from api.models import Connection, GraphData, LogbookEntry
 from utils.version import app_title
 from ui.graph_widget import GlucoseChart
 from ui.logbook_dialog import LogbookDialog
@@ -754,13 +754,26 @@ class MainWindow(QWidget):
                 pass  # winsound only works on Windows
 
     def _show_logbook(self):
-        if not self.current_connection:
+        # Libre 3 streams continuously and doesn't populate the API's scan
+        # logbook, so we build the log from the graph data we already poll
+        # plus the 1-min readings we've been accumulating locally.
+        if not self.current_connection or not self.graph_data:
+            dialog = LogbookDialog([], self.config.get("unit", "mmol"), self)
+            dialog.exec()
             return
-        try:
-            entries = self.client.get_logbook(self.current_connection.patient_id)
-        except Exception as e:
-            QMessageBox.warning(self, "Error", f"Failed to load logbook:\n{e}")
-            return
+
+        readings = list(self.graph_data.readings)
+        if readings and self._recent_readings:
+            last_ts = readings[-1].timestamp
+            readings.extend(r for r in self._recent_readings if r.timestamp > last_ts)
+        elif self._recent_readings:
+            readings.extend(self._recent_readings)
+
+        entries = [
+            LogbookEntry(timestamp=r.timestamp, value_mgdl=r.value_mgdl)
+            for r in readings
+        ]
+        entries.sort(key=lambda e: e.timestamp, reverse=True)
 
         dialog = LogbookDialog(entries, self.config.get("unit", "mmol"), self)
         dialog.exec()

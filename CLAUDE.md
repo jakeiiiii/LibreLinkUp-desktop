@@ -26,7 +26,7 @@ Python 3.13 · PySide6 (Qt) · pyqtgraph · requests · cryptography (Fernet) ·
 Base: `https://api-{region}.libreview.io` (regions: us, ca, eu, de, fr, au, jp)
 Headers: `product: llu.android`, `version: 4.16.0` (server-enforced minimum)
 Auth: `POST /llu/auth/login` → JWT (may redirect to correct region)
-Data: `GET /llu/connections`, `/connections/{id}/graph` (15-min intervals, 12h), `/connections/{id}/logbook`
+Data: `GET /llu/connections`, `/connections/{id}/graph` (15-min intervals, 12h). `/connections/{id}/logbook` exists in the client but is unused — Libre 3 doesn't populate it (no manual scans), so the Log dialog renders graph data + locally-accumulated 1-min readings instead.
 Auth headers: `Authorization: Bearer {token}` + `Account-Id: sha256(user_id)`
 
 ## Key Behaviors

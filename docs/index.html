@@ -497,7 +497,7 @@ let authToken = null;
 let accountId = null;
 let connections = [];
 let currentConnection = null;
-let graphData = null;
+let allReadings = [];
 let recentReadings = [];
 let unit = "mmol";
 let refreshTimer = null;
@@ -756,7 +756,7 @@ async function refreshData() {
     }
 
     // Build full list: API + accumulated recent
-    let allReadings = [...apiReadings];
+    allReadings = [...apiReadings];
     if (allReadings.length && recentReadings.length) {
       const lastGraphTs = allReadings[allReadings.length - 1].ts;
       const extras = recentReadings.filter(r => r.ts > lastGraphTs);
@@ -1128,30 +1128,23 @@ function saveBeepThreshold() {
 // ══════════════════════════════════════════════════════════════
 // Logbook
 // ══════════════════════════════════════════════════════════════
-async function showLogbook() {
-  if (!currentConnection) return;
-  const pid = currentConnection.patientId;
+function showLogbook() {
+  // Libre 3 streams continuously and doesn't populate the API's scan
+  // logbook, so we build the log from the graph data we already poll
+  // plus the 1-min readings we've been accumulating locally.
+  const entries = [...allReadings].sort((a, b) => b.ts - a.ts);
+  const tbody = document.getElementById("logbookBody");
+  tbody.innerHTML = "";
 
-  try {
-    const body = await apiCall("GET", `/llu/connections/${pid}/logbook`);
-    if (body.status !== 0) throw new Error("Failed to fetch logbook");
+  entries.forEach(e => {
+    const tr = document.createElement("tr");
+    const d = new Date(e.ts);
+    tr.innerHTML = `<td>${d.toLocaleDateString()} ${d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</td>` +
+                   `<td style="color:${glucoseColor(e.mmol)};font-weight:bold">${readingValue(e)} ${unitStr()}</td>`;
+    tbody.appendChild(tr);
+  });
 
-    const entries = (body.data || []).map(parseReading).sort((a, b) => b.ts - a.ts);
-    const tbody = document.getElementById("logbookBody");
-    tbody.innerHTML = "";
-
-    entries.forEach(e => {
-      const tr = document.createElement("tr");
-      const d = new Date(e.ts);
-      tr.innerHTML = `<td>${d.toLocaleDateString()} ${d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</td>` +
-                     `<td style="color:${glucoseColor(e.mmol)};font-weight:bold">${readingValue(e)} ${unitStr()}</td>`;
-      tbody.appendChild(tr);
-    });
-
-    document.getElementById("logbookModal").classList.add("open");
-  } catch (e) {
-    alert("Failed to load logbook: " + e.message);
-  }
+  document.getElementById("logbookModal").classList.add("open");
 }
 
 function closeLogbook() { document.getElementById("logbookModal").classList.remove("open"); }
@@ -1165,7 +1158,7 @@ function doLogout() {
   accountId = null;
   connections = [];
   currentConnection = null;
-  graphData = null;
+  allReadings = [];
   recentReadings = [];
   if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
   if (clockTimer) { clearInterval(clockTimer); clockTimer = null; }

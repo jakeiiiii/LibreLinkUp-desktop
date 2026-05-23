@@ -17,7 +17,7 @@ A Windows desktop app that replicates Abbott's [LibreLinkUp](https://www.libreli
 - **Always on top** -- pin the window above all other applications; persisted between sessions
 - **Low glucose warning beep** -- audible 1000 Hz alert when glucose drops below a configurable threshold (default 4.0 mmol/L)
 - **Stale data detection** -- when the last reading is older than the configured threshold, the display alternates between the last value and "No Recent Data" every 800ms
-- **Logbook viewer** -- table dialog showing manual scan history with timestamps and glucose values
+- **Logbook viewer** -- table dialog listing the last 12 hours of glucose readings with timestamps (works for both Libre 2 scans and Libre 3 continuous streaming)
 - **Encrypted credentials** -- email and password stored locally using Fernet encryption, keyed to your Windows username and machine name
 - **Window position** -- saved on close and restored on next launch; centers on screen when no saved position exists or when expanding from compact to full view
 - **mmol/L and mg/dL** -- toggle units in real-time from the header bar; affects the display, chart, taskbar icon, and beep threshold
