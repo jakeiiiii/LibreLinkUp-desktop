@@ -1,4 +1,4 @@
-# LibreLinkUp Desktop v1.0.9
+# LibreLinkUp Desktop v1.0.10
 
 Windows desktop app for monitoring CGM glucose readings from a FreeStyle Libre sensor via Abbott's unofficial LibreLinkUp API.
 
@@ -17,7 +17,7 @@ Python 3.13 · PySide6 (Qt) · pyqtgraph · requests · cryptography (Fernet) ·
 - `utils/config.py` — JSON config with Fernet-encrypted credentials
 - `resources/style.qss` — Qt stylesheet (red/white theme)
 - `config.json` — User-editable defaults (lives next to exe or main.py)
-- `VERSION` — Version string (1.0.9)
+- `VERSION` — Version string (1.0.10)
 - `docs/index.html` — Web version: single-page app (hosted on GitHub Pages)
 - `docs/worker.js` — Cloudflare Worker CORS proxy (deployed separately)
 - `docs/README.md` — Web version setup guide
@@ -26,7 +26,7 @@ Python 3.13 · PySide6 (Qt) · pyqtgraph · requests · cryptography (Fernet) ·
 Base: `https://api-{region}.libreview.io` (regions: us, ca, eu, de, fr, au, jp)
 Headers: `product: llu.android`, `version: 4.16.0` (server-enforced minimum)
 Auth: `POST /llu/auth/login` → JWT (may redirect to correct region)
-Data: `GET /llu/connections`, `/connections/{id}/graph` (15-min intervals, 12h), `/connections/{id}/logbook`
+Data: `GET /llu/connections`, `/connections/{id}/graph` (15-min intervals, 12h). `/connections/{id}/logbook` exists in the client but is unused — Libre 3 doesn't populate it (no manual scans), so the Log dialog renders graph data + locally-accumulated 1-min readings instead.
 Auth headers: `Authorization: Bearer {token}` + `Account-Id: sha256(user_id)`
 
 ## Key Behaviors
@@ -78,7 +78,5 @@ When the user says: **"commit and push"**
 When the user says: **"release"**
 - Bump to the next patch version (e.g. 1.0.6 → 1.0.7)
 - Update version everywhere: `utils/version.py`, `VERSION`, `README.md`, `CLAUDE.md`
-- Rebuild `bin/LibreLinkUp.zip` via PyInstaller + Compress-Archive
 - Commit and push all changes
-- Create git tag (e.g. `v1.0.7`) and push it
-- Create a GitHub Release with `bin/LibreLinkUp.zip` attached
+- Create git tag (e.g. `v1.0.7`) and push it — `.github/workflows/release.yml` runs on `windows-latest`, builds with PyInstaller, and publishes a GitHub Release with `bin/LibreLinkUp.zip` attached
