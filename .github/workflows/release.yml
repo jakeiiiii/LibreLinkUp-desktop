@@ -1,0 +1,43 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Build with PyInstaller
+        run: |
+          pyinstaller --noconfirm --onedir --windowed `
+            --name "LibreLinkUp" `
+            --add-data "resources;resources" `
+            main.py
+
+      - name: Package zip
+        run: |
+          New-Item -ItemType Directory -Force -Path bin | Out-Null
+          Compress-Archive -Path dist\LibreLinkUp\* -DestinationPath bin\LibreLinkUp.zip -Force
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: bin/LibreLinkUp.zip
+          name: ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          generate_release_notes: true

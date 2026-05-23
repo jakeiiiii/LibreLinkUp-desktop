@@ -78,7 +78,5 @@ When the user says: **"commit and push"**
 When the user says: **"release"**
 - Bump to the next patch version (e.g. 1.0.6 → 1.0.7)
 - Update version everywhere: `utils/version.py`, `VERSION`, `README.md`, `CLAUDE.md`
-- Rebuild `bin/LibreLinkUp.zip` via PyInstaller + Compress-Archive
 - Commit and push all changes
-- Create git tag (e.g. `v1.0.7`) and push it
-- Create a GitHub Release with `bin/LibreLinkUp.zip` attached
+- Create git tag (e.g. `v1.0.7`) and push it — `.github/workflows/release.yml` runs on `windows-latest`, builds with PyInstaller, and publishes a GitHub Release with `bin/LibreLinkUp.zip` attached
