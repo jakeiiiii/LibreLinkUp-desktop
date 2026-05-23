@@ -76,7 +76,7 @@ When the user says: **"commit and push"**
 
 ### Cut a new release
 When the user says: **"release"**
-- Bump to the next patch version (e.g. 1.0.6 → 1.0.7)
-- Update version everywhere: `utils/version.py`, `VERSION`, `README.md`, `CLAUDE.md`
-- Commit and push all changes
-- Create git tag (e.g. `v1.0.7`) and push it — `.github/workflows/release.yml` runs on `windows-latest`, builds with PyInstaller, and publishes a GitHub Release with `bin/LibreLinkUp.zip` attached
+- Bump to the next patch version (e.g. 1.0.6 → 1.0.7) in `utils/version.py`, `VERSION`, `README.md`, `CLAUDE.md`
+- Commit, push, and merge the branch into `main` so the workflow file is on the default branch
+- Create the git tag locally (e.g. `git tag -a v1.0.7 -m "v1.0.7"`) and tell the user to push it from their machine: `git push origin v1.0.7`. **Do not attempt to push the tag from Claude Code on the web — the sandbox git proxy returns `403` on tag pushes.** The GitHub MCP exposes no `create_tag`/`create_release` tool either, so the tag push is the one step that has to come from the user
+- Once the tag lands, `.github/workflows/release.yml` runs on `windows-latest`, builds via PyInstaller, zips `dist/LibreLinkUp/` into `bin/LibreLinkUp.zip`, and publishes a GitHub Release with the zip attached and auto-generated release notes
