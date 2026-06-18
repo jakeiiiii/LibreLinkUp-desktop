@@ -686,7 +686,6 @@ function showApp() {
 function applyTheme() {
   if (!chart) return;
   chart.data.datasets[0].borderColor = themeVar("--chart-line") || "#333";
-  chart.data.datasets[1].backgroundColor = themeVar("--chart-line") || "#333";
   const textColor = themeVar("--text") || "#333";
   chart.options.scales.x.ticks.color = textColor;
   chart.options.scales.y.ticks.color = textColor;
@@ -934,7 +933,7 @@ function initChart() {
           label: "Current",
           data: [],
           borderColor: "transparent",
-          backgroundColor: themeVar("--chart-line") || "#333",
+          backgroundColor: "rgba(200, 50, 50, 0.9)",
           pointRadius: 6,
           pointStyle: "circle",
           showLine: false,
