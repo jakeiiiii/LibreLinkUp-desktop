@@ -20,15 +20,12 @@
 <style>
   :root {
     /* Neutral slate-gray accent for all UI chrome (header, buttons, focus, hovers).
-       Glucose severity colors (--green/--yellow/--dark-red) stay — they're data, not chrome. */
+       Only glucose alerts stay colored (low/high reading + chart threshold lines). */
     --accent: #4a4f57;
     --accent-hover: #3a3e45;
     --accent-pressed: #2e3137;
     --accent-fg: #4a4f57;
     --focus: #6b7280;
-    --green: #2ecc71;
-    --yellow: #f0c800;
-    --dark-red: #6b1010;
     --bg: #ffffff;
     --text: #333;
     --muted: #888;
@@ -689,6 +686,7 @@ function showApp() {
 function applyTheme() {
   if (!chart) return;
   chart.data.datasets[0].borderColor = themeVar("--chart-line") || "#333";
+  chart.data.datasets[1].backgroundColor = themeVar("--chart-line") || "#333";
   const textColor = themeVar("--text") || "#333";
   chart.options.scales.x.ticks.color = textColor;
   chart.options.scales.y.ticks.color = textColor;
@@ -936,7 +934,7 @@ function initChart() {
           label: "Current",
           data: [],
           borderColor: "transparent",
-          backgroundColor: "rgba(200, 50, 50, 0.9)",
+          backgroundColor: themeVar("--chart-line") || "#333",
           pointRadius: 6,
           pointStyle: "circle",
           showLine: false,
