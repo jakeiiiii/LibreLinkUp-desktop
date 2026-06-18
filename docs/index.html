@@ -19,16 +19,16 @@
 </script>
 <style>
   :root {
-    --red: #c0392b;
-    --red-hover: #a93226;
-    --red-pressed: #922b21;
+    /* Neutral slate-gray accent for all UI chrome (header, buttons, focus, hovers).
+       Glucose severity colors (--green/--yellow/--dark-red) stay — they're data, not chrome. */
+    --accent: #4a4f57;
+    --accent-hover: #3a3e45;
+    --accent-pressed: #2e3137;
+    --accent-fg: #4a4f57;
+    --focus: #6b7280;
     --green: #2ecc71;
     --yellow: #f0c800;
     --dark-red: #6b1010;
-    /* Muted red for the header bar + log button so they don't grab attention */
-    --header-bg: #b06a62;
-    --header-bg-hover: #9c5a52;
-    --header-border: #9c5a52;
     --bg: #ffffff;
     --text: #333;
     --muted: #888;
@@ -57,9 +57,11 @@
       --chart-grid: rgba(255,255,255,0.08);
       --glucose-normal: #e8e8e8;
       --glucose-high-severe: #ff6b6b;
-      --header-bg: #5c3b37;
-      --header-bg-hover: #6e4742;
-      --header-border: #6e4742;
+      --accent: #5a6068;
+      --accent-hover: #6a7078;
+      --accent-pressed: #4a4f57;
+      --accent-fg: #b8bdc5;
+      --focus: #8b919b;
       --shadow: rgba(0,0,0,0.5);
     }
   }
@@ -92,7 +94,7 @@
   }
   .login-card h1 {
     text-align: center;
-    color: var(--red);
+    color: var(--accent-fg);
     font-size: 22px;
     margin-bottom: 20px;
   }
@@ -113,13 +115,13 @@
     color: var(--text);
   }
   .form-group input:focus,
-  .form-group select:focus { border-color: var(--red); }
+  .form-group select:focus { border-color: var(--focus); }
   .remember-row { display: flex; align-items: center; gap: 6px; margin-bottom: 16px; font-size: 13px; }
-  .remember-row input { accent-color: var(--red); }
+  .remember-row input { accent-color: var(--accent); }
   .login-btn {
     width: 100%;
     padding: 12px;
-    background: var(--red);
+    background: var(--accent);
     color: white;
     border: none;
     border-radius: 4px;
@@ -128,10 +130,10 @@
     cursor: pointer;
     transition: background 0.2s;
   }
-  .login-btn:hover { background: var(--red-hover); }
-  .login-btn:active { background: var(--red-pressed); }
+  .login-btn:hover { background: var(--accent-hover); }
+  .login-btn:active { background: var(--accent-pressed); }
   .login-btn:disabled { background: #ccc; cursor: default; }
-  .login-status { text-align: center; color: var(--red); font-size: 13px; margin-top: 12px; min-height: 20px; }
+  .login-status { text-align: center; color: var(--accent-fg); font-size: 13px; margin-top: 12px; min-height: 20px; }
 
   /* ── Main App ── */
   /* Horizontal/vertical padding here keeps content inside TV overscan area */
@@ -146,7 +148,7 @@
     box-sizing: border-box;
   }
   .header-bar {
-    background: var(--header-bg);
+    background: var(--accent);
     color: white;
     display: flex;
     align-items: center;
@@ -155,9 +157,9 @@
     min-height: 48px;
   }
   .header-bar select {
-    background: var(--header-bg-hover);
+    background: var(--accent-hover);
     color: white;
-    border: 1px solid var(--header-border);
+    border: 1px solid var(--accent-pressed);
     border-radius: 3px;
     padding: 4px 8px;
     font-size: 13px;
@@ -225,7 +227,7 @@
   }
   #signalIndicator[hidden] { display: none; }
   .log-btn {
-    background: var(--header-bg);
+    background: var(--accent);
     color: white;
     border: none;
     border-radius: 4px;
@@ -235,7 +237,7 @@
     cursor: pointer;
     margin: 0 auto;
   }
-  .log-btn:hover { background: var(--header-bg-hover); }
+  .log-btn:hover { background: var(--accent-hover); }
   .gear-btn {
     background: transparent;
     color: var(--muted);
@@ -246,7 +248,7 @@
     cursor: pointer;
     position: relative;
   }
-  .gear-btn:hover { color: var(--red); border-color: var(--red); }
+  .gear-btn:hover { color: var(--accent-fg); border-color: var(--accent-fg); }
 
   /* ── Gear dropdown ── */
   .gear-menu {
@@ -271,7 +273,7 @@
     align-items: center;
     gap: 8px;
   }
-  .gear-menu-item:hover { background: var(--hover-bg); color: var(--red); }
+  .gear-menu-item:hover { background: var(--hover-bg); color: var(--accent-fg); }
   .gear-menu-sep { height: 1px; background: var(--border); margin: 4px 8px; }
 
   /* ── Logbook modal ── */
@@ -295,12 +297,12 @@
     overflow-y: auto;
     box-shadow: 0 4px 24px var(--shadow);
   }
-  .modal h2 { margin-bottom: 16px; color: var(--red); }
+  .modal h2 { margin-bottom: 16px; color: var(--accent-fg); }
   .modal table { width: 100%; border-collapse: collapse; font-size: 13px; }
   .modal th { background: var(--hover-bg); padding: 8px; border-bottom: 1px solid var(--input-border); text-align: left; font-weight: bold; }
   .modal td { padding: 6px 8px; border-bottom: 1px solid var(--border); }
   .modal-close { float: right; background: none; border: none; font-size: 20px; cursor: pointer; color: var(--muted); }
-  .modal-close:hover { color: var(--red); }
+  .modal-close:hover { color: var(--accent-fg); }
 
   /* ── Beep threshold modal ── */
   .beep-modal { text-align: center; }
@@ -326,7 +328,7 @@
     background: var(--card-bg);
     color: var(--text);
   }
-  .beep-modal .btn-ok { background: var(--red); color: white; border: none; }
+  .beep-modal .btn-ok { background: var(--accent); color: white; border: none; }
 
   /* ── Worker config modal ── */
   .config-note {
