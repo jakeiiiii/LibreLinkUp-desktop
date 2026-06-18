@@ -25,6 +25,10 @@
     --green: #2ecc71;
     --yellow: #f0c800;
     --dark-red: #6b1010;
+    /* Muted red for the header bar + log button so they don't grab attention */
+    --header-bg: #b06a62;
+    --header-bg-hover: #9c5a52;
+    --header-border: #9c5a52;
     --bg: #ffffff;
     --text: #333;
     --muted: #888;
@@ -53,6 +57,9 @@
       --chart-grid: rgba(255,255,255,0.08);
       --glucose-normal: #e8e8e8;
       --glucose-high-severe: #ff6b6b;
+      --header-bg: #5c3b37;
+      --header-bg-hover: #6e4742;
+      --header-border: #6e4742;
       --shadow: rgba(0,0,0,0.5);
     }
   }
@@ -139,7 +146,7 @@
     box-sizing: border-box;
   }
   .header-bar {
-    background: var(--red);
+    background: var(--header-bg);
     color: white;
     display: flex;
     align-items: center;
@@ -148,9 +155,9 @@
     min-height: 48px;
   }
   .header-bar select {
-    background: var(--red-hover);
+    background: var(--header-bg-hover);
     color: white;
-    border: 1px solid var(--red-pressed);
+    border: 1px solid var(--header-border);
     border-radius: 3px;
     padding: 4px 8px;
     font-size: 13px;
@@ -218,7 +225,7 @@
   }
   #signalIndicator[hidden] { display: none; }
   .log-btn {
-    background: var(--red);
+    background: var(--header-bg);
     color: white;
     border: none;
     border-radius: 4px;
@@ -228,7 +235,7 @@
     cursor: pointer;
     margin: 0 auto;
   }
-  .log-btn:hover { background: var(--red-hover); }
+  .log-btn:hover { background: var(--header-bg-hover); }
   .gear-btn {
     background: transparent;
     color: var(--muted);

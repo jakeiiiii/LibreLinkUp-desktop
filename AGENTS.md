@@ -1,4 +1,4 @@
-# LibreLinkUp Desktop v1.0.10
+# LibreLinkUp Desktop v1.0.9
 
 Windows desktop app for monitoring CGM glucose readings from a FreeStyle Libre sensor via Abbott's unofficial LibreLinkUp API.
 
@@ -17,7 +17,7 @@ Python 3.13 · PySide6 (Qt) · pyqtgraph · requests · cryptography (Fernet) ·
 - `utils/config.py` — JSON config with Fernet-encrypted credentials
 - `resources/style.qss` — Qt stylesheet (red/white theme)
 - `config.json` — User-editable defaults (lives next to exe or main.py)
-- `VERSION` — Version string (1.0.10)
+- `VERSION` — Version string (1.0.9)
 - `docs/index.html` — Web version: single-page app (hosted on GitHub Pages)
 - `docs/worker.js` — Cloudflare Worker CORS proxy (deployed separately)
 - `docs/README.md` — Web version setup guide
@@ -26,7 +26,7 @@ Python 3.13 · PySide6 (Qt) · pyqtgraph · requests · cryptography (Fernet) ·
 Base: `https://api-{region}.libreview.io` (regions: us, ca, eu, de, fr, au, jp)
 Headers: `product: llu.android`, `version: 4.16.0` (server-enforced minimum)
 Auth: `POST /llu/auth/login` → JWT (may redirect to correct region)
-Data: `GET /llu/connections`, `/connections/{id}/graph` (15-min intervals, 12h). `/connections/{id}/logbook` exists in the client but is unused — Libre 3 doesn't populate it (no manual scans), so the Log dialog renders graph data + locally-accumulated 1-min readings instead.
+Data: `GET /llu/connections`, `/connections/{id}/graph` (15-min intervals, 12h), `/connections/{id}/logbook`
 Auth headers: `Authorization: Bearer {token}` + `Account-Id: sha256(user_id)`
 
 ## Key Behaviors
@@ -56,8 +56,8 @@ Auth headers: `Authorization: Bearer {token}` + `Account-Id: sha256(user_id)`
 - Stale data on web blinks: alternates value / "No Recent Data" at 800ms (matches desktop). `startBlinking()` / `stopBlinking()` toggle the info-bar text via `blinkTimer`; `stopBlinking()` also runs on logout
 - `#readingTime` shows the current wall-clock time (not the reading timestamp), updated every 60s via `clockTimer`. The bottom bar's "Updated …" label still shows the last successful refresh time
 - Info-bar glucose number, trend arrow, and time use `clamp(…, vw, …)` font sizing so the row fits on both phones and TVs; `white-space: nowrap` keeps each span on one line
-- Dark/light theme respects `prefers-color-scheme`. All surface/text/border colors are CSS variables (`--bg`, `--text`, `--card-bg`, `--hover-bg`, `--input-border`, `--chart-line`, `--chart-grid`, `--glucose-normal`, `--glucose-high-severe`, `--shadow`) with a dark-mode `@media` block overriding them.
-- Header bar (`.header-bar`, its `select`) and the bottom "Log" button (`.log-btn`) use muted-red vars (`--header-bg`, `--header-bg-hover`, `--header-border`) — a softer dusty red rather than the loud accent `--red` — so they draw less attention. Both light and dark modes define their own values. JS reads vars via `themeVar()` for Chart.js line/grid/tick colors and for `glucoseColor()`. `applyTheme()` hooks `matchMedia("(prefers-color-scheme: dark)").change` so live OS theme toggles re-paint the chart without reload
+- Dark/light theme respects `prefers-color-scheme`. All surface/text/border colors are CSS variables (`--bg`, `--text`, `--card-bg`, `--hover-bg`, `--input-border`, `--chart-line`, `--chart-grid`, `--glucose-normal`, `--glucose-high-severe`, `--shadow`) with a dark-mode `@media` block overriding them. JS reads vars via `themeVar()` for Chart.js line/grid/tick colors and for `glucoseColor()`. `applyTheme()` hooks `matchMedia("(prefers-color-scheme: dark)").change` so live OS theme toggles re-paint the chart without reload
+- Header bar (`.header-bar`, its `select`) and the bottom "Log" button (`.log-btn`) use muted-red vars (`--header-bg`, `--header-bg-hover`, `--header-border`) — a softer dusty red rather than the loud accent `--red` — so they draw less attention. Both light and dark modes define their own values.
 - No-signal indicator: `#signalIndicator` in the bottom bar (`● No signal`, 12px muted, opacity 0.75) is hidden on success and shown on fetch failure; the last successful "Updated …" label is preserved so the user still sees when the data was last good
 - TV-safe padding on `#appScreen` via `max(env(safe-area-inset-*), 3vw/2vh)` keeps content inside the overscan area
 
@@ -77,7 +77,9 @@ When the user says: **"commit and push"**
 
 ### Cut a new release
 When the user says: **"release"**
-- Bump to the next patch version (e.g. 1.0.6 → 1.0.7) in `utils/version.py`, `VERSION`, `README.md`, `CLAUDE.md`
-- Commit, push, and merge the branch into `main` so the workflow file is on the default branch
-- Create the git tag locally (e.g. `git tag -a v1.0.7 -m "v1.0.7"`) and tell the user to push it from their machine: `git push origin v1.0.7`. **Do not attempt to push the tag from Claude Code on the web — the sandbox git proxy returns `403` on tag pushes.** The GitHub MCP exposes no `create_tag`/`create_release` tool either, so the tag push is the one step that has to come from the user
-- Once the tag lands, `.github/workflows/release.yml` runs on `windows-latest`, builds via PyInstaller, zips `dist/LibreLinkUp/` into `bin/LibreLinkUp.zip`, and publishes a GitHub Release with the zip attached and auto-generated release notes
+- Bump to the next patch version (e.g. 1.0.6 → 1.0.7)
+- Update version everywhere: `utils/version.py`, `VERSION`, `README.md`, `AGENTS.md`
+- Rebuild `bin/LibreLinkUp.zip` via PyInstaller + Compress-Archive
+- Commit and push all changes
+- Create git tag (e.g. `v1.0.7`) and push it
+- Create a GitHub Release with `bin/LibreLinkUp.zip` attached
