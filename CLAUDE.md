@@ -40,7 +40,7 @@ Auth headers: `Authorization: Bearer {token}` + `Account-Id: sha256(user_id)`
 - Unit conversion: `ValueInMgPerDl / 18.0` = mmol/L
 - Compact view: glucose + trend only, toggled via gear menu, persisted in config
 - Always on top: `WindowStaysOnTopHint`, toggled via gear menu, persisted in config
-- Window position: saved on close, restored on start; centers on screen when expanding from compact to full
+- Window position: saved on close, restored on start; centers on screen when expanding from compact to full. On restore, the saved coords are validated against connected screens (`_position_on_screen`): if no grabbable slice of the title bar lands on a current monitor — e.g. after a monitor is unplugged or rearranged — it centers on the primary screen instead of stranding the window off-screen
 - Auto-update: background thread checks GitHub Releases API for newer version on startup and every hour; if found, downloads `LibreLinkUp.zip`, spawns a `.bat` updater script (timeout → Expand-Archive → relaunch), and exits; manual "Check for Updates..." in gear menu prompts before applying
 - Prevent sleep: blocks screensaver and display sleep via `SetThreadExecutionState`; controlled by `prevent_sleep` config key (default `true`)
 - Logout clears cached credentials so next launch shows login screen

@@ -352,10 +352,27 @@ class MainWindow(QWidget):
     def _restore_position(self):
         x = self.config.get("window_x")
         y = self.config.get("window_y")
-        if x is not None and y is not None:
+        if x is not None and y is not None and self._position_on_screen(x, y):
             self.move(x, y)
         else:
             self._center_on_screen()
+
+    def _position_on_screen(self, x, y):
+        """True if the window's title bar would land on a connected screen.
+
+        Guards against a saved position that pointed at a monitor which has
+        since been unplugged or rearranged, which would otherwise strand the
+        window off-screen with no way to drag it back.
+        """
+        from PySide6.QtCore import QRect
+
+        # Require a chunk of the title bar to be visible and grabbable, not the
+        # whole window — a partly off-edge window is still reachable.
+        bar = QRect(x, y, max(self.width(), 1), 32)
+        for screen in QApplication.screens():
+            if screen.availableGeometry().intersected(bar).width() >= 120:
+                return True
+        return False
 
     def _center_on_screen(self):
         screen = self.screen().availableGeometry()
