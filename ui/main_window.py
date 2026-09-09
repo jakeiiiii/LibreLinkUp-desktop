@@ -334,11 +334,11 @@ class MainWindow(QWidget):
 
     def start(self):
         """Called after login to load initial data."""
-        # Restore saved position or center on screen
-        self._restore_position()
         # Restore compact view if saved
         if self.config.get("compact_view", False):
             self._toggle_compact()
+        # Validate the saved position using the restored window size.
+        self._restore_position()
         # Restore always-on-top if saved
         if self.config.get("always_on_top", False):
             self._apply_always_on_top()
