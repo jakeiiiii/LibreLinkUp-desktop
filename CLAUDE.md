@@ -36,6 +36,7 @@ Auth headers: `Authorization: Bearer {token}` + `Account-Id: sha256(user_id)`
 - Stale data (>`stale_minutes`): alternates value / "No Recent Data" at 800ms
 - Taskbar icon: 256px rounded rect, 4-tier color scheme by mmol/L range (<4 red/yellow, 4–10 green/black, 10.1–14.9 yellow/black, 15+ dark red/white); when stale, flashes between last reading and grey "--" at 800ms
 - Warning beep: 1000Hz 600ms via `winsound.Beep` when below threshold
+- Loud alarms (gear → "Alarms..."), each optional and off by default: no signal for > N min (`alert_no_signal_*`), glucose above X (`alert_high_*`), glucose below Y (`alert_low_*`). `utils/alarm.py` synthesizes a full-amplitude 1000/1600Hz square-wave siren WAV in %TEMP% and loops it async via `winsound.PlaySound`. `_evaluate_alerts()` runs on every refresh (including fetch failures); high/low only judge readings fresher than `stale_minutes`. A topmost non-modal alert box shows while ringing; silencing (button, X, Esc, or gear → "Silence Alarm") snoozes for `alert_snooze_minutes` (0 = until it clears). A condition that clears forgets its snooze
 - Trend arrows: 1=down 2=↘ 3=→ 4=↗ 5=up
 - Unit conversion: `ValueInMgPerDl / 18.0` = mmol/L
 - Compact view: glucose + trend only, toggled via gear menu, persisted in config

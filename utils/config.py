@@ -27,6 +27,14 @@ DEFAULTS = {
     "password": "",
     "low_beep_enabled": True,
     "low_beep_threshold_mmol": 4.0,  # beep when glucose falls below this (0 = disabled)
+    # Loud alarms — all optional, off by default
+    "alert_no_signal_enabled": False,
+    "alert_no_signal_minutes": 20,    # alarm if no new reading for this long
+    "alert_high_enabled": False,
+    "alert_high_mmol": 15.0,          # alarm when glucose is above this
+    "alert_low_enabled": False,
+    "alert_low_mmol": 3.5,            # alarm when glucose is below this
+    "alert_snooze_minutes": 15,       # after silencing, re-alarm if still active
     "compact_view": False,
     "always_on_top": False,
     "window_x": None,

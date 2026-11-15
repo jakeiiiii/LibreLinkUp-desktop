@@ -9,12 +9,13 @@ from PySide6.QtCore import Qt, QTimer, Signal, QThread
 from PySide6.QtGui import QPixmap, QPainter, QFont, QColor, QIcon, QImage
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
-    QComboBox, QMessageBox, QDialog, QDoubleSpinBox,
+    QComboBox, QMessageBox, QDialog, QDoubleSpinBox, QSpinBox, QCheckBox,
     QDialogButtonBox, QFormLayout, QMenu, QSystemTrayIcon,
 )
 
 from api.client import LibreLinkUpClient, LibreLinkUpError
 from api.models import Connection, GraphData, LogbookEntry
+from utils import alarm
 from utils.version import app_title
 from ui.graph_widget import GlucoseChart
 from ui.logbook_dialog import LogbookDialog
@@ -123,6 +124,12 @@ class MainWindow(QWidget):
         self._last_icon: QIcon | None = None
         self._last_hicon = None
         self._last_stale_reading = None  # last reading to flash on icon when stale
+        # Loud alarm state
+        self._latest_reading = None           # newest reading seen from the API
+        self._alert_baseline = datetime.now() # "no signal" clock before any reading arrives
+        self._ringing_alerts: dict[str, str] = {}   # kind -> message, currently sounding
+        self._snoozed_until: dict[str, datetime] = {}
+        self._alert_box: QMessageBox | None = None
         self._tray_icon = QSystemTrayIcon(self)
         self._tray_icon.activated.connect(self._on_tray_activated)
 
@@ -405,6 +412,7 @@ class MainWindow(QWidget):
 
     def _refresh_data(self):
         if not self.current_connection:
+            self._evaluate_alerts()
             return
 
         try:
@@ -412,9 +420,15 @@ class MainWindow(QWidget):
         except Exception as e:
             logger.error(f"Refresh failed: {e}")
             self.refresh_label.setText(f"Error: {e}")
+            self._evaluate_alerts()
             return
 
         conn = self.graph_data.connection
+        if conn.current_reading and (
+            self._latest_reading is None
+            or conn.current_reading.timestamp >= self._latest_reading.timestamp
+        ):
+            self._latest_reading = conn.current_reading
 
         # Set alarm thresholds on chart
         self.chart.set_low_alarm(conn.low_alarm_mgdl)
@@ -503,6 +517,8 @@ class MainWindow(QWidget):
 
         now = datetime.now().strftime("%I:%M %p")
         self.refresh_label.setText(f"Updated {now}")
+
+        self._evaluate_alerts()
 
     def _toggle_unit(self):
         current = self.config.get("unit", "mmol")
@@ -658,6 +674,15 @@ class MainWindow(QWidget):
 
         menu.addSeparator()
 
+        # Loud alarms
+        alerts_action = menu.addAction(f"Alarms ({self._alerts_summary()})...")
+        alerts_action.triggered.connect(self._show_alerts_dialog)
+        if self._ringing_alerts:
+            silence_action = menu.addAction("Silence Alarm")
+            silence_action.triggered.connect(self._silence_alerts)
+
+        menu.addSeparator()
+
         # Check for updates
         update_action = menu.addAction("Check for Updates...")
         update_action.triggered.connect(self._check_for_updates)
@@ -765,10 +790,199 @@ class MainWindow(QWidget):
         if threshold <= 0:
             return
         if reading.value_mmol < threshold:
+            if alarm.is_playing():
+                return  # the loud alarm is already sounding
             try:
                 winsound.Beep(1000, 600)  # 1000 Hz for 600ms
             except Exception:
                 pass  # winsound only works on Windows
+
+    # ── Loud alarms (no signal / high / low) ──
+
+    def _fmt_mmol(self, mmol: float) -> str:
+        if self.config.get("unit", "mmol") == "mgdl":
+            return f"{round(mmol * 18.0)} mg/dL"
+        return f"{mmol:.1f} mmol/L"
+
+    def _alerts_summary(self) -> str:
+        on = [name for key, name in (
+            ("alert_no_signal_enabled", "signal"),
+            ("alert_high_enabled", "high"),
+            ("alert_low_enabled", "low"),
+        ) if self.config.get(key, False)]
+        return ", ".join(on) if on else "off"
+
+    def _evaluate_alerts(self):
+        """Work out which alarms should be sounding right now and act on it."""
+        now = datetime.now()
+        cfg = self.config
+        active: dict[str, str] = {}
+
+        # No signal: no new sensor reading for longer than the configured time.
+        # Covers both a sensor that stopped sending and the app failing to fetch.
+        if cfg.get("alert_no_signal_enabled", False):
+            last = self._latest_reading.timestamp if self._latest_reading else self._alert_baseline
+            limit = cfg.get("alert_no_signal_minutes", 20)
+            gone = now - last
+            if gone > timedelta(minutes=limit):
+                active["no_signal"] = f"NO SIGNAL for {int(gone.total_seconds() // 60)} min"
+
+        # High / low: only judge readings that are still fresh, so a brief fetch
+        # error doesn't silence (and reset) a high/low alarm.
+        reading = self._latest_reading
+        stale_limit = timedelta(minutes=cfg.get("stale_minutes", 15))
+        if reading and now - reading.timestamp <= stale_limit:
+            mmol = reading.value_mmol
+            high = cfg.get("alert_high_mmol", 15.0)
+            low = cfg.get("alert_low_mmol", 3.5)
+            if cfg.get("alert_high_enabled", False) and mmol > high:
+                active["high"] = f"HIGH glucose: {self._fmt_mmol(mmol)} (above {self._fmt_mmol(high)})"
+            if cfg.get("alert_low_enabled", False) and mmol < low:
+                active["low"] = f"LOW glucose: {self._fmt_mmol(mmol)} (below {self._fmt_mmol(low)})"
+
+        # A condition that has cleared forgets its snooze, so it alarms again next time
+        for kind in list(self._snoozed_until):
+            if kind not in active:
+                del self._snoozed_until[kind]
+
+        self._ringing_alerts = {
+            kind: msg for kind, msg in active.items()
+            if self._snoozed_until.get(kind, now) <= now
+        }
+
+        if self._ringing_alerts:
+            alarm.start()
+            self._show_alert_box()
+        else:
+            alarm.stop()
+            self._close_alert_box()
+
+    def _show_alert_box(self):
+        text = "\n".join(self._ringing_alerts.values())
+        if self._alert_box is None:
+            box = QMessageBox(self)
+            box.setWindowTitle(app_title(self.config, "— ALARM"))
+            box.setIcon(QMessageBox.Critical)
+            snooze = self.config.get("alert_snooze_minutes", 15)
+            label = f"Silence ({snooze} min)" if snooze > 0 else "Silence"
+            box.addButton(label, QMessageBox.AcceptRole)
+            box.setWindowFlags(box.windowFlags() | Qt.WindowStaysOnTopHint)
+            box.setWindowModality(Qt.NonModal)
+            # Any way of closing the box (button, X, Esc) silences the alarm
+            box.finished.connect(self._silence_alerts)
+            self._alert_box = box
+        self._alert_box.setText(text)
+        self._alert_box.show()
+        self._alert_box.raise_()
+        self._alert_box.activateWindow()
+
+    def _close_alert_box(self):
+        box = self._alert_box
+        if box is None:
+            return
+        self._alert_box = None
+        box.finished.disconnect(self._silence_alerts)
+        box.close()
+        box.deleteLater()
+
+    def _silence_alerts(self, *_):
+        """Stop the alarm; re-alarm after the snooze if the condition persists."""
+        snooze = self.config.get("alert_snooze_minutes", 15)
+        until = (datetime.now() + timedelta(minutes=snooze)) if snooze > 0 else datetime.max
+        for kind in self._ringing_alerts:
+            self._snoozed_until[kind] = until
+        self._ringing_alerts = {}
+        alarm.stop()
+        self._close_alert_box()
+
+    def _show_alerts_dialog(self):
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Alarms")
+        form = QFormLayout(dialog)
+        cfg = self.config
+        mgdl = cfg.get("unit", "mmol") == "mgdl"
+
+        def glucose_spin(mmol_value):
+            spin = QDoubleSpinBox()
+            if mgdl:
+                spin.setDecimals(0)
+                spin.setRange(20, 500)
+                spin.setSingleStep(5)
+                spin.setValue(round(mmol_value * 18.0))
+                spin.setSuffix(" mg/dL")
+            else:
+                spin.setDecimals(1)
+                spin.setRange(1.0, 30.0)
+                spin.setSingleStep(0.5)
+                spin.setValue(mmol_value)
+                spin.setSuffix(" mmol/L")
+            return spin
+
+        def to_mmol(spin):
+            return round(spin.value() / 18.0, 1) if mgdl else round(spin.value(), 1)
+
+        def row(checkbox, widget):
+            widget.setEnabled(checkbox.isChecked())
+            checkbox.toggled.connect(widget.setEnabled)
+            form.addRow(checkbox, widget)
+
+        signal_chk = QCheckBox("No signal for more than")
+        signal_chk.setChecked(cfg.get("alert_no_signal_enabled", False))
+        signal_spin = QSpinBox()
+        signal_spin.setRange(1, 240)
+        signal_spin.setSuffix(" min")
+        signal_spin.setValue(cfg.get("alert_no_signal_minutes", 20))
+        row(signal_chk, signal_spin)
+
+        high_chk = QCheckBox("Glucose higher than")
+        high_chk.setChecked(cfg.get("alert_high_enabled", False))
+        high_spin = glucose_spin(cfg.get("alert_high_mmol", 15.0))
+        row(high_chk, high_spin)
+
+        low_chk = QCheckBox("Glucose lower than")
+        low_chk.setChecked(cfg.get("alert_low_enabled", False))
+        low_spin = glucose_spin(cfg.get("alert_low_mmol", 3.5))
+        row(low_chk, low_spin)
+
+        snooze_spin = QSpinBox()
+        snooze_spin.setRange(0, 240)
+        snooze_spin.setSuffix(" min")
+        snooze_spin.setSpecialValueText("Until it clears")
+        snooze_spin.setValue(cfg.get("alert_snooze_minutes", 15))
+        form.addRow("After silencing, re-alarm in:", snooze_spin)
+
+        test_btn = QPushButton("Test Sound")
+        def toggle_test():
+            if alarm.is_playing():
+                alarm.stop()
+                test_btn.setText("Test Sound")
+            else:
+                alarm.start()
+                test_btn.setText("Stop Test")
+        test_btn.clicked.connect(toggle_test)
+        form.addRow("", test_btn)
+
+        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        form.addRow(buttons)
+
+        accepted = dialog.exec() == QDialog.Accepted
+        alarm.stop()  # end any test sound; _evaluate_alerts restarts a real alarm
+
+        if accepted:
+            cfg["alert_no_signal_enabled"] = signal_chk.isChecked()
+            cfg["alert_no_signal_minutes"] = signal_spin.value()
+            cfg["alert_high_enabled"] = high_chk.isChecked()
+            cfg["alert_high_mmol"] = to_mmol(high_spin)
+            cfg["alert_low_enabled"] = low_chk.isChecked()
+            cfg["alert_low_mmol"] = to_mmol(low_spin)
+            cfg["alert_snooze_minutes"] = snooze_spin.value()
+            from utils.config import save_config
+            save_config(cfg)
+            self._snoozed_until.clear()  # new settings take effect right away
+            self._close_alert_box()       # rebuilt with the new snooze label if needed
+        self._evaluate_alerts()
 
     def _show_logbook(self):
         # Libre 3 streams continuously and doesn't populate the API's scan
@@ -860,5 +1074,7 @@ class MainWindow(QWidget):
     def stop_timer(self):
         self._timer.stop()
         self._stop_blinking()
+        alarm.stop()
+        self._close_alert_box()
         if hasattr(self, "_update_check_timer"):
             self._update_check_timer.stop()
